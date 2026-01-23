@@ -193,7 +193,22 @@ To rebuild after changes:
 docker-compose up -d --build
 ```
 
-### Option 2: Manual
+### Option 2: Startup Script
+
+**Windows:**
+
+```bash
+start.bat
+```
+
+**Linux/Mac:**
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+### Option 3: Manual
 
 1. Start backend:
 
