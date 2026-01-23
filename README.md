@@ -1,6 +1,12 @@
+<img width="1584" height="396" alt="Untitled design (1)" src="https://github.com/user-attachments/assets/a52ea71a-d236-470e-a174-caa9da67a484" />
+
+<div align="center">
+
 # Aniways
 
 Anime streaming platform with a FastAPI backend and Next.js frontend.
+</div>
+
 
 ## Disclaimer
 
