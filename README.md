@@ -178,6 +178,23 @@ npm start
 
 ## Quick Start
 
+### Option 1: Docker (Recommended)
+
+```bash
+docker-compose up -d
+```
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:4444`
+
+To rebuild after changes:
+
+```bash
+docker-compose up -d --build
+```
+
+### Option 2: Manual
+
 1. Start backend:
 
    ```bash
