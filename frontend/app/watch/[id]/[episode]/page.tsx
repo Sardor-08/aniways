@@ -328,11 +328,11 @@ export default function WatchPage({ params }: WatchPageProps) {
         />
       )}
 
-      {/* Main Layout: Info | Video | Episodes */}
-      <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-10">
-        {/* Left: Anime Info */}
+      {/* Main Layout: Video first on mobile, then Info | Video | Episodes on desktop */}
+      <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-6 lg:mt-10">
+        {/* Left: Anime Info - Hidden on mobile, shown on desktop */}
         {anime && !isExpanded && (
-          <div className="lg:w-72 flex-shrink-0">
+          <div className="hidden lg:block lg:w-72 flex-shrink-0">
             <ScrollArea className="h-[420px] lg:h-[420px] pr-3">
               <div className="space-y-3">
                 {/* Poster */}
@@ -518,10 +518,10 @@ export default function WatchPage({ params }: WatchPageProps) {
 
           {/* Video Controls */}
           <div className="py-2">
-            {/* Single Row: Prev | Server & Quality | Expand & Focus | Next */}
-            <div className="grid grid-cols-4 items-center gap-2">
-              {/* Col 1: Previous */}
-              <div className="justify-self-start">
+            {/* Mobile: Stack controls, Desktop: Single row */}
+            <div className="flex flex-col sm:grid sm:grid-cols-4 items-center gap-2">
+              {/* Row 1 Mobile / Col 1 Desktop: Previous */}
+              <div className="hidden sm:block justify-self-start">
                 {episodeNum > 1 && (
                   <Link href={`/watch/${id}/${episodeNum - 1}`}>
                     <Button
@@ -536,10 +536,10 @@ export default function WatchPage({ params }: WatchPageProps) {
                 )}
               </div>
 
-              {/* Col 2: Server & Quality */}
-              <div className="justify-self-center">
+              {/* Server & Quality - Always visible */}
+              <div className="w-full sm:w-auto sm:justify-self-center">
                 {sources.length > 0 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     {/* Server Toggle */}
                     <div className="flex rounded-lg overflow-hidden border border-border">
                       <button
@@ -598,8 +598,62 @@ export default function WatchPage({ params }: WatchPageProps) {
                 )}
               </div>
 
-              {/* Col 3: Expand & Focus */}
-              <div className="flex items-center justify-center gap-1">
+              {/* Mobile: Prev/Next + Expand/Focus row */}
+              <div className="flex sm:hidden items-center justify-between w-full">
+                {episodeNum > 1 ? (
+                  <Link href={`/watch/${id}/${episodeNum - 1}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 gap-1"
+                    >
+                      <SkipBack className="h-4 w-4" />
+                      <span className="text-xs">Prev</span>
+                    </Button>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                  >
+                    {isExpanded ? (
+                      <Minimize2 className="h-4 w-4" />
+                    ) : (
+                      <Maximize2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${isFocused ? "text-primary" : ""}`}
+                    onClick={() => setIsFocused(!isFocused)}
+                  >
+                    <Focus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {totalEpisodes === 0 || episodeNum < totalEpisodes ? (
+                  <Link href={`/watch/${id}/${episodeNum + 1}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 gap-1"
+                    >
+                      <span className="text-xs">Next</span>
+                      <SkipForward className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+              </div>
+
+              {/* Desktop: Expand & Focus */}
+              <div className="hidden sm:flex items-center justify-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -628,8 +682,8 @@ export default function WatchPage({ params }: WatchPageProps) {
                 </Button>
               </div>
 
-              {/* Col 4: Next */}
-              <div className="justify-self-end">
+              {/* Desktop: Next */}
+              <div className="hidden sm:block justify-self-end">
                 {(totalEpisodes === 0 || episodeNum < totalEpisodes) && (
                   <Link href={`/watch/${id}/${episodeNum + 1}`}>
                     <Button
@@ -648,7 +702,7 @@ export default function WatchPage({ params }: WatchPageProps) {
         </div>
 
         {/* Right: Episode List */}
-        <div className="lg:w-64 flex-shrink-0 space-y-3">
+        <div className="w-full lg:w-64 flex-shrink-0 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-medium shrink-0">Episodes</h3>
             <div className="relative flex items-center">
@@ -659,7 +713,7 @@ export default function WatchPage({ params }: WatchPageProps) {
                 value={episodeSearch}
                 onChange={(e) => setEpisodeSearch(e.target.value)}
                 onKeyDown={handleEpisodeSearch}
-                className="h-7 w-20 text-xs pl-7 pr-2"
+                className="h-7 w-16 sm:w-20 text-xs pl-7 pr-2"
               />
             </div>
             <div className="flex items-center gap-1">
@@ -718,10 +772,12 @@ export default function WatchPage({ params }: WatchPageProps) {
           {episodeListView === "grid" && (
             <ScrollArea
               className={
-                isExpanded ? "h-[400px] lg:h-[500px]" : "h-[300px] lg:h-[340px]"
+                isExpanded
+                  ? "h-[250px] sm:h-[400px] lg:h-[500px]"
+                  : "h-[200px] sm:h-[300px] lg:h-[340px]"
               }
             >
-              <div className="grid grid-cols-5 gap-1.5 pr-2">
+              <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-5 gap-1.5 pr-2">
                 {(episodeSort === "asc"
                   ? getEpisodesInRange()
                   : [...getEpisodesInRange()].reverse()
@@ -748,7 +804,9 @@ export default function WatchPage({ params }: WatchPageProps) {
           {episodeListView === "list" && (
             <ScrollArea
               className={
-                isExpanded ? "h-[400px] lg:h-[500px]" : "h-[300px] lg:h-[340px]"
+                isExpanded
+                  ? "h-[250px] sm:h-[400px] lg:h-[500px]"
+                  : "h-[200px] sm:h-[300px] lg:h-[340px]"
               }
             >
               <div className="flex flex-col gap-1 pr-2">

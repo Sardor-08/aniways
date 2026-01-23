@@ -239,9 +239,64 @@ export default function AnimeDetailPage({ params }: AnimeDetailPageProps) {
               )}
             </div>
           )}
+
+          {/* Mobile Info Section */}
+          <div className="lg:hidden space-y-3 text-sm pt-4 border-t border-border/50">
+            <div className="grid grid-cols-2 gap-3">
+              {anime.status && (
+                <div>
+                  <span className="text-muted-foreground">Status: </span>
+                  <span className={anime.airing ? "text-green-500" : ""}>
+                    {anime.status}
+                  </span>
+                </div>
+              )}
+              {anime.score && (
+                <div>
+                  <span className="text-muted-foreground">Score: </span>
+                  <span>{anime.score.toFixed(2)}</span>
+                </div>
+              )}
+              {anime.season && anime.year && (
+                <div>
+                  <span className="text-muted-foreground">Premiered: </span>
+                  <span>
+                    {anime.season.charAt(0).toUpperCase() +
+                      anime.season.slice(1)}{" "}
+                    {anime.year}
+                  </span>
+                </div>
+              )}
+              {anime.duration && (
+                <div>
+                  <span className="text-muted-foreground">Duration: </span>
+                  <span>{anime.duration.replace(" per ep", "")}</span>
+                </div>
+              )}
+            </div>
+            {anime.genres && anime.genres.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                {anime.genres.map((genre) => (
+                  <Badge
+                    key={genre.mal_id}
+                    variant="outline"
+                    className="text-xs"
+                  >
+                    {genre.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {anime.studios && anime.studios.length > 0 && (
+              <div>
+                <span className="text-muted-foreground">Studios: </span>
+                <span>{anime.studios.map((s) => s.name).join(", ")}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right: Info Sidebar */}
+        {/* Right: Info Sidebar - Desktop only */}
         <div className="lg:w-72 flex-shrink-0 space-y-4 text-sm hidden lg:block">
           {/* Japanese Title */}
           {anime.title_japanese && (

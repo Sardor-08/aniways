@@ -32,12 +32,12 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="space-y-10 mt-10 px-4 md:px-10 lg:px-20">
+      <div className="space-y-8 sm:space-y-10 mt-6 sm:mt-10 px-2 sm:px-4 md:px-10 lg:px-20">
         {/* Hero Skeleton */}
-        <Skeleton className="w-full h-[400px] rounded-xl" />
+        <Skeleton className="w-full h-[250px] sm:h-[280px] md:h-[300px] rounded-xl" />
 
-        <div className="flex gap-6">
-          <div className="flex-1 space-y-10">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 space-y-8 sm:space-y-10">
             {/* Latest Releases Skeleton */}
             <div className="space-y-4">
               <Skeleton className="h-7 w-40" />
@@ -62,7 +62,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Sidebar Skeleton */}
+          {/* Sidebar Skeleton - Hidden on mobile */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="space-y-3">
               <Skeleton className="h-7 w-32" />
@@ -83,18 +83,18 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-10 mt-10 px-4 md:px-10 lg:px-20">
+    <div className="space-y-8 sm:space-y-10 mt-6 sm:mt-10 px-2 sm:px-4 md:px-10 lg:px-20">
       {/* Hero Carousel */}
       <HeroCarousel />
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Main Content */}
-        <div className="flex-1 space-y-10">
+        <div className="flex-1 space-y-8 sm:space-y-10">
           <LatestReleases />
 
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Upcoming Season</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">Upcoming Season</h2>
               <Link
                 href="/season/upcoming"
                 className="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
@@ -107,7 +107,7 @@ export default function HomePage() {
           </section>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Hidden on mobile */}
         <aside className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-20">
             <TopAnimeSidebar />

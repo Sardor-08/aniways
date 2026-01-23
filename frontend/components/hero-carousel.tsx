@@ -49,7 +49,7 @@ export function HeroCarousel() {
 
   if (loading) {
     return (
-      <div className="relative w-full h-[300px] md:h-[300px] rounded-2xl overflow-hidden bg-muted">
+      <div className="relative w-full h-[250px] sm:h-[280px] md:h-[300px] rounded-2xl overflow-hidden bg-muted">
         <Skeleton className="w-full h-full" />
       </div>
     );
@@ -61,12 +61,12 @@ export function HeroCarousel() {
   const genres = current.genres?.slice(0, 3).map((g) => g.name) || [];
 
   return (
-    <div className="relative w-full h-[300px] md:h-[300px] rounded-2xl overflow-hidden group">
+    <div className="relative w-full h-[250px] sm:h-[280px] md:h-[300px] rounded-2xl overflow-hidden group">
       {/* Left Column - Solid Black */}
-      <div className="absolute left-0 top-0 w-[60%] h-full bg-black/100 z-0" />
+      <div className="absolute left-0 top-0 w-full sm:w-[60%] h-full bg-black/90 sm:bg-black/100 z-0" />
 
       {/* Right Column - Poster Image */}
-      <div className="absolute right-0 top-0 w-[45%] h-full">
+      <div className="absolute right-0 top-0 w-full sm:w-[45%] h-full">
         <Image
           src={
             current.images.webp?.large_image_url ||
@@ -82,15 +82,18 @@ export function HeroCarousel() {
           unoptimized
         />
         {/* Fade/blend effects on the image */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 via-30% to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 sm:via-black/60 via-50% sm:via-30% to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
       </div>
 
       {/* Content - Left side */}
-      <div className="relative z-20 h-full flex flex-col justify-center p-4 md:p-8 max-w-xl">
+      <div className="relative z-20 h-full flex flex-col justify-center p-4 sm:p-6 md:p-8 max-w-xl">
         {/* Title */}
-        <h1 className="text-2xl md:text-2xl font-bold text-white mb-2 line-clamp-1" title={getTitle(current)}>
+        <h1
+          className="text-xl sm:text-2xl font-bold text-white mb-2 line-clamp-1"
+          title={getTitle(current)}
+        >
           {getTitle(current)}
         </h1>
 
@@ -116,7 +119,7 @@ export function HeroCarousel() {
             <Badge
               key={genre}
               variant="outline"
-              className="text-white/80 border-white/20 text-xs px-2 py-0.5"
+              className="text-white/80 border-white/20 text-xs px-2 py-0.5 hidden sm:inline-flex"
             >
               {genre}
             </Badge>
@@ -124,7 +127,7 @@ export function HeroCarousel() {
         </div>
 
         {/* Synopsis */}
-        <p className="text-xs md:text-sm text-gray-300 line-clamp-3 mb-2">
+        <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 sm:line-clamp-3 mb-2">
           {current.synopsis || "No synopsis available."}
         </p>
 
@@ -142,7 +145,7 @@ export function HeroCarousel() {
               {current.year || "TBA"}
             </span>
           </div>
-          <div className="flex flex-col">
+          <div className="hidden sm:flex flex-col">
             <span className="text-gray-400 text-[10px]">Quality</span>
             <span className="text-white font-medium">HD</span>
           </div>
@@ -151,7 +154,7 @@ export function HeroCarousel() {
         {/* Buttons */}
         <div className="flex items-center gap-3">
           <Link href={`/anime/${current.mal_id}`}>
-            <Button className="bg-purple-800 hover:bg-purple-700 text-white px-4 py-2 rounded-full gap-2 text-sm font-medium hover:cursor-pointer transition">
+            <Button className="bg-purple-800 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 rounded-full gap-2 text-xs sm:text-sm font-medium hover:cursor-pointer transition">
               <Play className="w-3 h-3 fill-white" />
               Watch Now
             </Button>
@@ -160,7 +163,7 @@ export function HeroCarousel() {
       </div>
 
       {/* Pagination */}
-      <div className="absolute bottom-6 right-6 md:right-10 z-20 flex items-center gap-3">
+      <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 md:right-10 z-20 flex items-center gap-2 sm:gap-3">
         <button
           onClick={goToPrevious}
           className="w-8 h-8 rounded-full hover:text-purple-400 flex items-center justify-center text-white transition-colors hover:cursor-pointer"

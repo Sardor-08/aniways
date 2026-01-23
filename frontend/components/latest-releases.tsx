@@ -47,8 +47,8 @@ export function LatestReleases({ className }: LatestReleasesProps) {
   if (loading) {
     return (
       <section className={className}>
-        <h2 className="text-2xl font-bold mb-4">Latest Episodes</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4">Latest Episodes</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="aspect-[3/4] rounded-lg" />
@@ -63,8 +63,8 @@ export function LatestReleases({ className }: LatestReleasesProps) {
 
   return (
     <section className={className}>
-      <h2 className="text-2xl font-bold mb-4">Latest Episodes</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4">Latest Episodes</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
         {releases.map((release) => (
           <LatestReleaseCard
             key={`${release.anime_uuid}-${release.episode}`}
