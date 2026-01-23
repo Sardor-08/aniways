@@ -1,8 +1,6 @@
 """
 Animepahe Episodes
 ==================
-
-Episode listing functionality.
 """
 
 import logging
@@ -19,61 +17,37 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def get_anime_info(scraper: "AnimepaheScraper", anime_uuid: str) -> dict:
-    """
-    Get anime info including total episode count.
-
-    Args:
-        scraper: Animepahe scraper instance
-        anime_uuid: Animepahe anime UUID
-
-    Returns:
-        Dict with anime info
-    """
+async def get_anime_info(scraper: "AnimepaheScraper", uuid: str) -> dict:
+    """Get anime info including episode count."""
     try:
-        url = f"{settings.ANIMEPAHE_BASE_URL}/anime/{anime_uuid}"
-        resp = await scraper.request(url)
+        resp = await scraper._request(f"{settings.ANIMEPAHE_BASE_URL}/anime/{uuid}")
         resp.raise_for_status()
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
-        # Get episode count
-        episode_count = 0
-        episode_div = soup.select_one(".episode-count")
-        if episode_div:
-            match = re.search(r"\((\d+)\)", episode_div.text)
-            if match:
-                episode_count = int(match.group(1))
+        # Episode count
+        count = 0
+        if div := soup.select_one(".episode-count"):
+            if m := re.search(r"\((\d+)\)", div.text):
+                count = int(m.group(1))
 
-        # Get title
-        title_elem = soup.select_one(".title-wrapper h1 span")
-        title = title_elem.text.strip() if title_elem else None
+        # Title
+        title = None
+        if elem := soup.select_one(".title-wrapper h1 span"):
+            title = elem.text.strip()
 
-        return {
-            "uuid": anime_uuid,
-            "title": title,
-            "total_episodes": episode_count,
-        }
+        return {"uuid": uuid, "title": title, "total_episodes": count}
     except Exception as e:
-        logger.error("Anime info error for %s: %s", anime_uuid, e)
-        return {"uuid": anime_uuid, "total_episodes": 0}
+        logger.error("Anime info error: %s", e)
+        return {"uuid": uuid, "total_episodes": 0}
 
 
-async def get_episodes(scraper: "AnimepaheScraper", anime_uuid: str, page: int = 1) -> dict:
-    """
-    Get episodes for an anime.
-
-    Args:
-        scraper: Animepahe scraper instance
-        anime_uuid: Animepahe anime UUID
-        page: Page number
-
-    Returns:
-        Dict with episodes and pagination info
-    """
+async def get_episodes(scraper: "AnimepaheScraper", uuid: str, page: int = 1) -> dict:
+    """Get episodes for an anime."""
     try:
-        url = f"{settings.ANIMEPAHE_API_URL}?m=release&id={anime_uuid}&sort=episode_asc&page={page}"
-        resp = await scraper.request(url)
+        resp = await scraper._request(
+            f"{settings.animepahe_api}?m=release&id={uuid}&sort=episode_asc&page={page}"
+        )
         resp.raise_for_status()
         data = resp.json()
 
@@ -92,20 +66,20 @@ async def get_episodes(scraper: "AnimepaheScraper", anime_uuid: str, page: int =
             "last_page": data.get("last_page", 1),
         }
     except Exception as e:
-        logger.error("Episodes error for %s: %s", anime_uuid, e)
+        logger.error("Episodes error: %s", e)
         return {"episodes": [], "total": 0, "last_page": 1}
 
 
-async def find_episode(scraper: "AnimepaheScraper", anime_uuid: str, ep_num: int) -> dict | None:
+async def find_episode(scraper: "AnimepaheScraper", uuid: str, ep_num: int) -> dict | None:
     """Find episode across all pages."""
-    data = await get_episodes(scraper, anime_uuid)
+    data = await get_episodes(scraper, uuid)
 
     for ep in data["episodes"]:
         if ep.get("episode") == ep_num:
             return ep
 
     for page in range(2, data["last_page"] + 1):
-        page_data = await get_episodes(scraper, anime_uuid, page)
+        page_data = await get_episodes(scraper, uuid, page)
         for ep in page_data["episodes"]:
             if ep.get("episode") == ep_num:
                 return ep

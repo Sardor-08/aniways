@@ -2,12 +2,7 @@
 Jikan API Client
 ================
 
-Wrapper for the Jikan API (MyAnimeList data).
-
-Features:
-    - Rate limiting (3 requests/second)
-    - Caching with configurable TTL
-    - Automatic retries
+Wrapper for Jikan API (MyAnimeList data) with rate limiting and caching.
 """
 
 import asyncio
@@ -17,96 +12,60 @@ from typing import Any
 
 from app.core.config import settings
 from app.core.dependencies import get_client
+from app.utils import cache
 
 logger = logging.getLogger(__name__)
 
-# Rate limiting
-_last_request_time = 0.0
-_rate_limit_lock = asyncio.Lock()
-
-# Cache
-_cache: dict[str, tuple[float, Any]] = {}
-
-CACHE_TTL = {
-    "top": settings.CACHE_TTL_TOP,
-    "seasonal": settings.CACHE_TTL_SEASONAL,
-    "anime": settings.CACHE_TTL_ANIME,
-    "episodes": settings.CACHE_TTL_EPISODES,
-    "search": settings.CACHE_TTL_SEARCH,
-}
-
-
-def _get_cache(key: str, ttl_type: str) -> Any | None:
-    if key in _cache:
-        cached_time, value = _cache[key]
-        if time.time() - cached_time < CACHE_TTL.get(ttl_type, 300):
-            return value
-        del _cache[key]
-    return None
-
-
-def _set_cache(key: str, value: Any) -> None:
-    _cache[key] = (time.time(), value)
+# Rate limiting state
+_last_request = 0.0
+_rate_lock = asyncio.Lock()
 
 
 # =============================================================================
-# API Request
+# Core API
 # =============================================================================
 
 
-async def jikan_request(
-    endpoint: str,
-    params: dict | None = None,
-    max_retries: int = settings.JIKAN_MAX_RETRIES,
-) -> dict | None:
-    """Make request to Jikan API with rate limiting."""
-    global _last_request_time
+async def _request(endpoint: str, params: dict | None = None) -> dict | None:
+    """Make rate-limited request to Jikan API with retries."""
+    global _last_request
 
-    for attempt in range(max_retries):
-        async with _rate_limit_lock:
-            now = time.time()
-            elapsed = now - _last_request_time
+    for attempt in range(settings.JIKAN_MAX_RETRIES):
+        # Rate limiting
+        async with _rate_lock:
+            elapsed = time.time() - _last_request
             if elapsed < settings.JIKAN_RATE_LIMIT_DELAY:
                 await asyncio.sleep(settings.JIKAN_RATE_LIMIT_DELAY - elapsed)
-            _last_request_time = time.time()
-
-        client = get_client()
-        url = f"{settings.JIKAN_BASE_URL}{endpoint}"
+            _last_request = time.time()
 
         try:
-            response = await client.get(url, params=params, follow_redirects=True)
+            resp = await get_client().get(
+                f"{settings.JIKAN_BASE_URL}{endpoint}",
+                params=params,
+                follow_redirects=True,
+            )
 
-            if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", 1))
-                logger.warning("Rate limited, waiting %ds", retry_after)
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_after)
-                    continue
-                return None
+            if resp.status_code == 429:
+                wait = int(resp.headers.get("Retry-After", 1))
+                logger.warning("Rate limited, waiting %ds", wait)
+                await asyncio.sleep(wait)
+                continue
 
-            response.raise_for_status()
-            return response.json()
+            resp.raise_for_status()
+            return resp.json()
 
         except Exception as e:
             logger.warning("Jikan error (attempt %d): %s", attempt + 1, e)
-            if attempt < max_retries - 1:
+            if attempt < settings.JIKAN_MAX_RETRIES - 1:
                 await asyncio.sleep(0.5 * (attempt + 1))
-                continue
-            return None
 
     return None
 
 
-# =============================================================================
-# Data Normalization
-# =============================================================================
-
-
-def _normalize_anime(anime: dict) -> dict:
-    """Normalize Jikan anime response."""
-    images = anime.get("images", {})
-    jpg = images.get("jpg", {})
-    webp = images.get("webp", {})
+def _normalize(anime: dict) -> dict:
+    """Normalize Jikan anime response to consistent format."""
+    img = anime.get("images", {})
+    jpg, webp = img.get("jpg", {}), img.get("webp", {})
 
     return {
         "mal_id": anime.get("mal_id"),
@@ -116,16 +75,8 @@ def _normalize_anime(anime: dict) -> dict:
         "title_japanese": anime.get("title_japanese"),
         "title_synonyms": anime.get("title_synonyms", []),
         "images": {
-            "jpg": {
-                "image_url": jpg.get("image_url"),
-                "small_image_url": jpg.get("small_image_url"),
-                "large_image_url": jpg.get("large_image_url"),
-            },
-            "webp": {
-                "image_url": webp.get("image_url"),
-                "small_image_url": webp.get("small_image_url"),
-                "large_image_url": webp.get("large_image_url"),
-            },
+            "jpg": {k: jpg.get(k) for k in ("image_url", "small_image_url", "large_image_url")},
+            "webp": {k: webp.get(k) for k in ("image_url", "small_image_url", "large_image_url")},
         },
         "type": anime.get("type"),
         "source": anime.get("source"),
@@ -157,235 +108,181 @@ def _normalize_anime(anime: dict) -> dict:
     }
 
 
+def _empty_page() -> dict:
+    """Return empty paginated response."""
+    return {"data": [], "pagination": {"last_visible_page": 1, "has_next_page": False}}
+
+
 # =============================================================================
-# Top Anime
+# Public API
 # =============================================================================
 
 
 async def scrape_top_anime(
-    filter_type: str = "airing", limit: int = 10, anime_type: str = None, page: int = 1
+    filter_type: str = "airing",
+    limit: int = 10,
+    anime_type: str | None = None,
+    page: int = 1,
 ) -> dict:
-    """Get top anime from Jikan API."""
-    cache_key = f"top:{filter_type}:{anime_type}:{limit}:{page}"
-    cached = _get_cache(cache_key, "top")
-    if cached:
+    """Get top anime by filter (airing, upcoming, bypopularity, favorite)."""
+    key = f"top:{filter_type}:{anime_type}:{limit}:{page}"
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
-    filter_map = {
-        "airing": "airing",
-        "upcoming": "upcoming",
-        "bypopularity": "bypopularity",
-        "favorite": "favorite",
-        "": None,
-    }
-
     params = {"limit": min(limit, 25), "page": page}
-    jikan_filter = filter_map.get(filter_type)
-    if jikan_filter:
-        params["filter"] = jikan_filter
 
-    valid_types = ["tv", "movie", "ova", "special", "ona", "music", "cm", "pv", "tv_special"]
-    if anime_type and anime_type.lower() in valid_types:
+    if filter_type in ("airing", "upcoming", "bypopularity", "favorite"):
+        params["filter"] = filter_type
+
+    if anime_type and anime_type.lower() in ("tv", "movie", "ova", "special", "ona", "music"):
         params["type"] = anime_type.lower()
 
-    result = await jikan_request("/top/anime", params)
+    result = await _request("/top/anime", params)
     if not result or "data" not in result:
-        return {"data": [], "pagination": {"last_visible_page": 1, "has_next_page": False}}
-
-    anime_list = [_normalize_anime(a) for a in result["data"][:limit]]
-    pagination = result.get("pagination", {})
+        return _empty_page()
 
     response = {
-        "data": anime_list,
+        "data": [_normalize(a) for a in result["data"][:limit]],
         "pagination": {
-            "last_visible_page": pagination.get("last_visible_page", 1),
-            "has_next_page": pagination.get("has_next_page", False),
+            "last_visible_page": result.get("pagination", {}).get("last_visible_page", 1),
+            "has_next_page": result.get("pagination", {}).get("has_next_page", False),
         },
     }
-
-    _set_cache(cache_key, response)
+    cache.set(key, response)
     return response
 
 
-# =============================================================================
-# Anime Details
-# =============================================================================
-
-
 async def scrape_anime_details(mal_id: int) -> dict | None:
-    """Get full anime details."""
-    cache_key = f"anime:{mal_id}"
-    cached = _get_cache(cache_key, "anime")
-    if cached:
+    """Get full anime details by MAL ID."""
+    key = f"anime:{mal_id}"
+    if cached := cache.get(key, settings.CACHE_TTL_LONG):
         return cached
 
-    result = await jikan_request(f"/anime/{mal_id}/full")
+    result = await _request(f"/anime/{mal_id}/full")
     if not result or "data" not in result:
         return None
 
-    anime = _normalize_anime(result["data"])
-    _set_cache(cache_key, anime)
+    anime = _normalize(result["data"])
+    cache.set(key, anime)
     return anime
 
 
-# =============================================================================
-# Browse
-# =============================================================================
-
-
 async def browse_anime(
-    status: str = None,
-    order_by: str = None,
+    status: str | None = None,
+    order_by: str | None = None,
     sort: str = "desc",
     page: int = 1,
     limit: int = 25,
 ) -> dict:
-    """Browse anime with filters."""
-    cache_key = f"browse:{status}:{order_by}:{sort}:{page}:{limit}"
-    cached = _get_cache(cache_key, "search")
-    if cached:
+    """Browse anime with filters and sorting."""
+    key = f"browse:{status}:{order_by}:{sort}:{page}:{limit}"
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
     params = {"page": page, "limit": min(limit, 25), "sfw": "false"}
 
-    valid_statuses = ["airing", "complete", "upcoming"]
-    if status and status.lower() in valid_statuses:
+    if status and status.lower() in ("airing", "complete", "upcoming"):
         params["status"] = status.lower()
 
-    valid_order_by = ["score", "popularity", "start_date", "rank", "members"]
-    if order_by and order_by.lower() in valid_order_by:
+    if order_by and order_by.lower() in ("score", "popularity", "start_date", "rank", "members"):
         params["order_by"] = order_by.lower()
         params["sort"] = "asc" if sort == "asc" else "desc"
 
-    result = await jikan_request("/anime", params)
+    result = await _request("/anime", params)
     if not result or "data" not in result:
-        return {"data": [], "pagination": {"last_visible_page": 1, "has_next_page": False}}
-
-    anime_list = [_normalize_anime(a) for a in result["data"]]
-    pagination = result.get("pagination", {})
+        return _empty_page()
 
     response = {
-        "data": anime_list,
+        "data": [_normalize(a) for a in result["data"]],
         "pagination": {
-            "last_visible_page": pagination.get("last_visible_page", 1),
-            "has_next_page": pagination.get("has_next_page", False),
+            "last_visible_page": result.get("pagination", {}).get("last_visible_page", 1),
+            "has_next_page": result.get("pagination", {}).get("has_next_page", False),
         },
     }
-
-    _set_cache(cache_key, response)
+    cache.set(key, response)
     return response
-
-
-# =============================================================================
-# Search
-# =============================================================================
 
 
 async def search_anime(query: str, page: int = 1, limit: int = 25) -> tuple[list[dict], int]:
-    """Search anime."""
-    cache_key = f"search:{query}:{page}:{limit}"
-    cached = _get_cache(cache_key, "search")
-    if cached:
+    """Search anime by query."""
+    key = f"search:{query}:{page}:{limit}"
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
-    params = {"q": query, "page": page, "limit": min(limit, 25), "sfw": "false"}
-
-    result = await jikan_request("/anime", params)
+    result = await _request("/anime", {"q": query, "page": page, "limit": min(limit, 25), "sfw": "false"})
     if not result or "data" not in result:
         return [], 1
 
-    anime_list = [_normalize_anime(a) for a in result["data"]]
-    pagination = result.get("pagination", {})
-    total_pages = pagination.get("last_visible_page", 1)
-
-    response = (anime_list, total_pages)
-    _set_cache(cache_key, response)
+    response = (
+        [_normalize(a) for a in result["data"]],
+        result.get("pagination", {}).get("last_visible_page", 1),
+    )
+    cache.set(key, response)
     return response
 
 
-# =============================================================================
-# Seasonal
-# =============================================================================
+async def scrape_seasonal_anime(
+    year: int | None = None,
+    season: str | None = None,
+    limit: int = 25,
+) -> list[dict]:
+    """Get seasonal anime (current if no year/season specified)."""
+    endpoint = f"/seasons/{year}/{season}" if year and season else "/seasons/now"
+    key = f"seasonal:{year or 'now'}:{season or ''}:{limit}"
 
-
-async def scrape_seasonal_anime(year: int = None, season: str = None, limit: int = 25) -> list[dict]:
-    """Get seasonal anime."""
-    if year and season:
-        cache_key = f"seasonal:{year}:{season}:{limit}"
-        endpoint = f"/seasons/{year}/{season}"
-    else:
-        cache_key = f"seasonal:now:{limit}"
-        endpoint = "/seasons/now"
-
-    cached = _get_cache(cache_key, "seasonal")
-    if cached:
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
-    params = {"limit": min(limit, 25)}
-    result = await jikan_request(endpoint, params)
+    result = await _request(endpoint, {"limit": min(limit, 25)})
     if not result or "data" not in result:
         return []
 
-    anime_list = [_normalize_anime(a) for a in result["data"][:limit]]
-    _set_cache(cache_key, anime_list)
+    anime_list = [_normalize(a) for a in result["data"][:limit]]
+    cache.set(key, anime_list)
     return anime_list
 
 
 async def scrape_upcoming_anime(limit: int = 25) -> list[dict]:
     """Get upcoming anime."""
-    cache_key = f"seasonal:upcoming:{limit}"
-    cached = _get_cache(cache_key, "seasonal")
-    if cached:
+    key = f"upcoming:{limit}"
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
-    params = {"limit": min(limit, 25)}
-    result = await jikan_request("/seasons/upcoming", params)
+    result = await _request("/seasons/upcoming", {"limit": min(limit, 25)})
     if not result or "data" not in result:
         return []
 
-    anime_list = [_normalize_anime(a) for a in result["data"][:limit]]
-    _set_cache(cache_key, anime_list)
+    anime_list = [_normalize(a) for a in result["data"][:limit]]
+    cache.set(key, anime_list)
     return anime_list
 
 
-# =============================================================================
-# Schedule
-# =============================================================================
-
-
-async def scrape_schedule(day: str = None, page: int = 1) -> list[dict]:
-    """Get weekly schedule."""
-    cache_key = f"schedule:{day or 'all'}:{page}"
-    cached = _get_cache(cache_key, "seasonal")
-    if cached:
+async def scrape_schedule(day: str | None = None, page: int = 1) -> list[dict]:
+    """Get weekly broadcast schedule."""
+    key = f"schedule:{day or 'all'}:{page}"
+    if cached := cache.get(key, settings.CACHE_TTL_SHORT):
         return cached
 
     params = {"page": page, "sfw": "true"}
     if day:
         params["filter"] = day
 
-    result = await jikan_request("/schedules", params)
+    result = await _request("/schedules", params)
     if not result or "data" not in result:
         return []
 
-    anime_list = [_normalize_anime(a) for a in result["data"]]
-    _set_cache(cache_key, anime_list)
+    anime_list = [_normalize(a) for a in result["data"]]
+    cache.set(key, anime_list)
     return anime_list
-
-
-# =============================================================================
-# Episodes
-# =============================================================================
 
 
 async def scrape_episode(mal_id: int, episode_num: int) -> dict | None:
     """Get specific episode info."""
-    cache_key = f"episode:{mal_id}:{episode_num}"
-    cached = _get_cache(cache_key, "episodes")
-    if cached:
+    key = f"episode:{mal_id}:{episode_num}"
+    if cached := cache.get(key, settings.CACHE_TTL_LONG):
         return cached
 
-    result = await jikan_request(f"/anime/{mal_id}/episodes/{episode_num}")
+    result = await _request(f"/anime/{mal_id}/episodes/{episode_num}")
     if not result or "data" not in result:
         return None
 
@@ -400,32 +297,24 @@ async def scrape_episode(mal_id: int, episode_num: int) -> dict | None:
         "filler": ep.get("filler", False),
         "recap": ep.get("recap", False),
     }
-
-    _set_cache(cache_key, episode)
+    cache.set(key, episode)
     return episode
 
 
 async def scrape_all_episodes(mal_id: int) -> list[dict]:
-    """Get all episodes."""
-    cache_key = f"episodes:{mal_id}"
-    cached = _get_cache(cache_key, "episodes")
-    if cached:
+    """Get all episodes for anime."""
+    key = f"episodes:{mal_id}"
+    if cached := cache.get(key, settings.CACHE_TTL_LONG):
         return cached
 
-    all_episodes = []
-    page = 1
-
-    while page <= 10:
-        result = await jikan_request(f"/anime/{mal_id}/episodes", {"page": page})
-        if not result or "data" not in result:
+    episodes = []
+    for page in range(1, 11):  # Max 10 pages
+        result = await _request(f"/anime/{mal_id}/episodes", {"page": page})
+        if not result or not result.get("data"):
             break
 
-        episodes = result["data"]
-        if not episodes:
-            break
-
-        for ep in episodes:
-            all_episodes.append({
+        for ep in result["data"]:
+            episodes.append({
                 "mal_id": ep.get("mal_id"),
                 "episode": ep.get("mal_id"),
                 "title": ep.get("title"),
@@ -436,102 +325,69 @@ async def scrape_all_episodes(mal_id: int) -> list[dict]:
                 "recap": ep.get("recap", False),
             })
 
-        pagination = result.get("pagination", {})
-        if not pagination.get("has_next_page", False):
+        if not result.get("pagination", {}).get("has_next_page"):
             break
-        page += 1
 
-    _set_cache(cache_key, all_episodes)
-    return all_episodes
-
-
-# =============================================================================
-# Recommendations
-# =============================================================================
+    cache.set(key, episodes)
+    return episodes
 
 
 async def scrape_recommendations(mal_id: int, limit: int = 12) -> list[dict]:
     """Get anime recommendations."""
-    cache_key = f"recommendations:{mal_id}:{limit}"
-    cached = _get_cache(cache_key, "anime")
-    if cached:
+    key = f"recommendations:{mal_id}:{limit}"
+    if cached := cache.get(key, settings.CACHE_TTL_LONG):
         return cached
 
-    result = await jikan_request(f"/anime/{mal_id}/recommendations")
+    result = await _request(f"/anime/{mal_id}/recommendations")
     if not result or "data" not in result:
         return []
 
-    recommendations = []
-    for rec in result["data"][:limit]:
-        entry = rec.get("entry", {})
-        if entry:
-            recommendations.append({
-                "mal_id": entry.get("mal_id"),
-                "title": entry.get("title"),
-                "title_english": entry.get("title_english"),
-                "images": entry.get("images", {}),
-                "votes": rec.get("votes", 0),
-            })
-
-    _set_cache(cache_key, recommendations)
-    return recommendations
-
-
-# =============================================================================
-# Characters
-# =============================================================================
+    recs = [
+        {
+            "mal_id": (e := rec.get("entry", {})).get("mal_id"),
+            "title": e.get("title"),
+            "title_english": e.get("title_english"),
+            "images": e.get("images", {}),
+            "votes": rec.get("votes", 0),
+        }
+        for rec in result["data"][:limit]
+        if rec.get("entry")
+    ]
+    cache.set(key, recs)
+    return recs
 
 
 async def scrape_characters(mal_id: int, limit: int = 12) -> list[dict]:
     """Get anime characters with voice actors."""
-    cache_key = f"characters:{mal_id}:{limit}"
-    cached = _get_cache(cache_key, "anime")
-    if cached:
+    key = f"characters:{mal_id}:{limit}"
+    if cached := cache.get(key, settings.CACHE_TTL_LONG):
         return cached
 
-    result = await jikan_request(f"/anime/{mal_id}/characters")
+    result = await _request(f"/anime/{mal_id}/characters")
     if not result or "data" not in result:
         return []
 
     characters = []
     for char in result["data"][:limit]:
         character = char.get("character", {})
-        voice_actors = char.get("voice_actors", [])
 
-        japanese_va = None
-        for va in voice_actors:
-            if va.get("language") == "Japanese":
-                japanese_va = {
-                    "mal_id": va.get("person", {}).get("mal_id"),
-                    "name": va.get("person", {}).get("name"),
-                    "images": va.get("person", {}).get("images", {}),
-                }
-                break
+        # Find Japanese VA
+        jp_va = next(
+            (
+                {"mal_id": va["person"]["mal_id"], "name": va["person"]["name"], "images": va["person"].get("images", {})}
+                for va in char.get("voice_actors", [])
+                if va.get("language") == "Japanese"
+            ),
+            None,
+        )
 
         characters.append({
             "mal_id": character.get("mal_id"),
             "name": character.get("name"),
             "images": character.get("images", {}),
             "role": char.get("role"),
-            "voice_actor": japanese_va,
+            "voice_actor": jp_va,
         })
 
-    _set_cache(cache_key, characters)
+    cache.set(key, characters)
     return characters
-
-
-# Backwards compatibility exports
-class JikanClient:
-    """Backwards compatibility wrapper."""
-
-    scrape_top_anime = staticmethod(scrape_top_anime)
-    scrape_anime_details = staticmethod(scrape_anime_details)
-    browse_anime = staticmethod(browse_anime)
-    search_anime = staticmethod(search_anime)
-    scrape_seasonal_anime = staticmethod(scrape_seasonal_anime)
-    scrape_upcoming_anime = staticmethod(scrape_upcoming_anime)
-    scrape_schedule = staticmethod(scrape_schedule)
-    scrape_episode = staticmethod(scrape_episode)
-    scrape_all_episodes = staticmethod(scrape_all_episodes)
-    scrape_recommendations = staticmethod(scrape_recommendations)
-    scrape_characters = staticmethod(scrape_characters)

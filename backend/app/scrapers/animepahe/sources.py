@@ -1,8 +1,6 @@
 """
 Animepahe Video Sources
 =======================
-
-Video source extraction functionality.
 """
 
 import logging
@@ -16,27 +14,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_SOURCE_PATTERN = re.compile(
+    r'data-src="([^"]+)"[^>]*data-fansub="([^"]*)"[^>]*data-resolution="(\d+)"[^>]*data-audio="([^"]*)"[^>]*data-av1="([^"]*)"',
+    re.I,
+)
 
-async def get_sources(scraper: "AnimepaheScraper", anime_uuid: str, episode_session: str) -> dict:
-    """
-    Get video sources for an episode.
 
-    Args:
-        scraper: Animepahe scraper instance
-        anime_uuid: Animepahe anime UUID
-        episode_session: Episode session ID
-
-    Returns:
-        Dict with video sources
-    """
+async def get_sources(scraper: "AnimepaheScraper", uuid: str, session: str) -> dict:
+    """Get video sources for an episode."""
     try:
-        url = f"{settings.ANIMEPAHE_BASE_URL}/play/{anime_uuid}/{episode_session}"
-        resp = await scraper.request(url)
+        resp = await scraper._request(f"{settings.ANIMEPAHE_BASE_URL}/play/{uuid}/{session}")
         resp.raise_for_status()
-        html = resp.text
 
-        # Parse sources from HTML
-        pattern = r'data-src="([^"]+)"[^>]*data-fansub="([^"]*)"[^>]*data-resolution="(\d+)"[^>]*data-audio="([^"]*)"[^>]*data-av1="([^"]*)"'
         sources = sorted(
             [
                 {
@@ -47,34 +36,22 @@ async def get_sources(scraper: "AnimepaheScraper", anime_uuid: str, episode_sess
                     "audio": a,
                     "av1": v == "1",
                 }
-                for u, f, r, a, v in re.findall(pattern, html, re.IGNORECASE)
+                for u, f, r, a, v in _SOURCE_PATTERN.findall(resp.text)
             ],
             key=lambda x: x["resolution"],
             reverse=True,
         )
 
-        return {"sources": sources, "episode_url": url}
+        return {"sources": sources, "episode_url": str(resp.url)}
     except Exception as e:
-        logger.error("Sources error for %s/%s: %s", anime_uuid, episode_session, e)
+        logger.error("Sources error: %s", e)
         return {"sources": []}
 
 
-async def get_video_url(
-    scraper: "AnimepaheScraper", mal_id: int, episode: int, quality: str = "1080"
-) -> dict:
-    """
-    Complete flow: MAL ID -> Animepahe search -> Episode -> Video URL.
-
-    Args:
-        scraper: Animepahe scraper instance
-        mal_id: MyAnimeList anime ID
-        episode: Episode number
-        quality: Preferred quality
-
-    Returns:
-        Dict with video URL or error
-    """
+async def get_video_url(scraper: "AnimepaheScraper", mal_id: int, episode: int, quality: str = "1080") -> dict:
+    """Complete flow: MAL ID -> video URL."""
     from app.scrapers.jikan import scrape_anime_details
+    from app.scrapers.animepahe.search import search, find_best_match
     from app.scrapers.animepahe.episodes import find_episode
 
     result = {"mal_id": mal_id, "episode": episode, "error": None}
@@ -89,15 +66,12 @@ async def get_video_url(
         result["mal_title"] = title
 
         # Search Animepahe
-        results = await scraper.search(title) or (
-            await scraper.search(title_en) if title_en else []
-        )
+        results = await search(scraper, title) or (await search(scraper, title_en) if title_en else [])
         if not results:
             return {**result, "error": f"'{title}' not found on Animepahe"}
 
-        match = scraper._best_match(results, title, title_en)
-        result["anime_uuid"] = match["uuid"]
-        result["animepahe_title"] = match["title"]
+        match = find_best_match(results, title, title_en)
+        result.update(anime_uuid=match["uuid"], animepahe_title=match["title"])
 
         # Find episode
         ep = await find_episode(scraper, match["uuid"], episode)
@@ -110,14 +84,14 @@ async def get_video_url(
         sources_data = await get_sources(scraper, match["uuid"], ep["session"])
         sources = sources_data.get("sources", [])
         result["sources"] = sources
+
         if not sources:
             return {**result, "error": "No sources found"}
 
         # Select quality
         target = int(quality)
         source = next((s for s in sources if s["resolution"] == target), sources[0])
-        result["selected_quality"] = source["quality"]
-        result["embed_url"] = source["embed_url"]
+        result.update(selected_quality=source["quality"], embed_url=source["embed_url"])
 
         # Extract video URL
         result["video_url"] = await scraper.kwik.extract(source["embed_url"])

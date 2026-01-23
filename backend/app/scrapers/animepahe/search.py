@@ -1,15 +1,13 @@
 """
 Animepahe Search
 ================
-
-Search functionality for Animepahe.
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from app.core.config import settings
-from app.utils.matching import best_match as _best_match
+from app.utils.matching import best_match
 
 if TYPE_CHECKING:
     from app.scrapers.animepahe.client import AnimepaheScraper
@@ -18,19 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 async def search(scraper: "AnimepaheScraper", query: str) -> list[dict]:
-    """
-    Search anime on Animepahe.
-
-    Args:
-        scraper: Animepahe scraper instance
-        query: Search query string
-
-    Returns:
-        List of matching anime
-    """
+    """Search anime on Animepahe."""
     try:
-        resp = await scraper.request(f"{settings.ANIMEPAHE_API_URL}?m=search&q={query}")
+        resp = await scraper._request(f"{settings.animepahe_api}?m=search&q={query}")
         resp.raise_for_status()
+
         return [
             {
                 "title": d.get("title"),
@@ -50,8 +40,6 @@ async def search(scraper: "AnimepaheScraper", query: str) -> list[dict]:
         return []
 
 
-def best_match(
-    results: list[dict], title: str, title_en: Optional[str] = None
-) -> dict:
-    """Find best matching anime from search results."""
-    return _best_match(results, title, title_en, title_key="title")
+def find_best_match(results: list[dict], title: str, title_en: str = None) -> dict:
+    """Find best matching anime from results."""
+    return best_match(results, title, title_en, key="title")

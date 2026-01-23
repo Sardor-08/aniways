@@ -1,6 +1,6 @@
-"""Utility modules."""
+"""Utilities Package"""
 
-from app.utils.cache import Cache, get_cache, set_cache
-from app.utils.matching import best_match, fuzzy_score
+from app.utils import cache
+from app.utils.matching import similarity, best_match
 
-__all__ = ["Cache", "get_cache", "set_cache", "best_match", "fuzzy_score"]
+__all__ = ["cache", "similarity", "best_match"]

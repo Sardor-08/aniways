@@ -2,46 +2,30 @@
 Cache Utilities
 ===============
 
-Simple in-memory TTL cache implementation.
+Lightweight in-memory TTL cache.
 """
 
 import time
 from typing import Any
 
-
-class Cache:
-    """In-memory cache with TTL support."""
-
-    def __init__(self):
-        self._store: dict[str, tuple[float, Any]] = {}
-
-    def get(self, key: str, ttl: int) -> Any | None:
-        """Get value if exists and not expired."""
-        if key in self._store:
-            cached_time, value = self._store[key]
-            if time.time() - cached_time < ttl:
-                return value
-            del self._store[key]
-        return None
-
-    def set(self, key: str, value: Any) -> None:
-        """Set value in cache."""
-        self._store[key] = (time.time(), value)
-
-    def clear(self) -> None:
-        """Clear all cached values."""
-        self._store.clear()
+_store: dict[str, tuple[float, Any]] = {}
 
 
-# Global cache instance
-_cache = Cache()
+def get(key: str, ttl: int) -> Any | None:
+    """Get value if exists and not expired."""
+    if key in _store:
+        ts, val = _store[key]
+        if time.time() - ts < ttl:
+            return val
+        del _store[key]
+    return None
 
 
-def get_cache(key: str, ttl: int) -> Any | None:
-    """Get cached value."""
-    return _cache.get(key, ttl)
+def set(key: str, value: Any) -> None:
+    """Store value with current timestamp."""
+    _store[key] = (time.time(), value)
 
 
-def set_cache(key: str, value: Any) -> None:
-    """Set cached value."""
-    _cache.set(key, value)
+def clear() -> None:
+    """Clear all cached data."""
+    _store.clear()

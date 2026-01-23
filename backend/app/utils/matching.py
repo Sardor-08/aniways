@@ -1,55 +1,48 @@
 """
-Matching Utilities
-==================
+String Matching Utilities
+=========================
 
-Fuzzy string matching for anime title comparison.
+Fuzzy matching for anime title comparison.
 """
 
 from difflib import SequenceMatcher
-from typing import Optional
 
 
-def fuzzy_score(s1: str, s2: str) -> float:
-    """Calculate similarity ratio between two strings."""
-    return SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+def similarity(a: str, b: str) -> float:
+    """Calculate similarity ratio (0-1) between two strings."""
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 
 def best_match(
-    results: list[dict],
+    items: list[dict],
     title: str,
-    title_en: Optional[str] = None,
-    title_key: str = "title",
+    title_en: str | None = None,
+    key: str = "title",
 ) -> dict:
     """
-    Find best matching item from results using fuzzy matching.
-
-    Args:
-        results: List of result dicts
-        title: Primary title to match
-        title_en: English title fallback
-        title_key: Key to use for title in results
-
-    Returns:
-        Best matching result dict or empty dict
+    Find best matching item using fuzzy matching.
+    
+    Returns first exact match, or highest similarity score.
     """
-    if not results:
+    if not items:
         return {}
 
-    best, best_score = results[0], 0.0
+    title_lower = title.lower()
+    title_en_lower = title_en.lower() if title_en else None
 
-    for item in results:
-        item_title = item.get(title_key, "").lower()
+    best, best_score = items[0], 0.0
 
-        # Exact match
-        if item_title == title.lower():
+    for item in items:
+        item_title = item.get(key, "").lower()
+
+        # Exact match = immediate return
+        if item_title == title_lower or item_title == title_en_lower:
             return item
-        if title_en and item_title == title_en.lower():
-            return item
 
-        # Fuzzy match
-        score = fuzzy_score(item_title, title)
+        # Calculate similarity
+        score = similarity(item_title, title)
         if title_en:
-            score = max(score, fuzzy_score(item_title, title_en))
+            score = max(score, similarity(item_title, title_en))
 
         if score > best_score:
             best, best_score = item, score

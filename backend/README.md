@@ -98,40 +98,191 @@ backend/
 
 ## API Reference
 
-### MAL Endpoints
+### MAL Endpoints (`/api`)
 
-| Endpoint                                  | Description                                        |
-| ----------------------------------------- | -------------------------------------------------- |
-| `GET /api/top/anime`                      | Top anime by filter (airing, upcoming, popularity) |
-| `GET /api/browse/anime`                   | Browse with sorting and filtering                  |
-| `GET /api/anime?q=`                       | Search anime                                       |
-| `GET /api/anime/{mal_id}`                 | Anime details                                      |
-| `GET /api/anime/{mal_id}/recommendations` | Recommendations                                    |
-| `GET /api/anime/{mal_id}/characters`      | Characters with voice actors                       |
-| `GET /api/seasons/now`                    | Current season                                     |
-| `GET /api/seasons/{year}/{season}`        | Specific season                                    |
-| `GET /api/schedules`                      | Weekly broadcast schedule                          |
+#### Top Anime
 
-### Animepahe Endpoints
+```
+GET /api/top/anime?filter=airing&page=1&limit=25&type=tv
+```
 
-| Endpoint                                              | Description             |
-| ----------------------------------------------------- | ----------------------- |
-| `GET /api/animepahe/latest`                           | Latest episode releases |
-| `POST /api/animepahe/cookies`                         | Set DDoS-Guard cookies  |
-| `GET /api/animepahe/search?q=`                        | Search Animepahe        |
-| `GET /api/animepahe/anime/{uuid}/episodes`            | Episode list            |
-| `GET /api/animepahe/episode/{uuid}/{session}/sources` | Video sources           |
-| `GET /api/animepahe/extract?url=`                     | Extract video URL       |
-| `GET /api/animepahe/proxy?url=`                       | CORS proxy              |
+| Param    | Default  | Description                                      |
+| -------- | -------- | ------------------------------------------------ |
+| `filter` | `airing` | `airing`, `upcoming`, `bypopularity`, `favorite` |
+| `page`   | `1`      | Page number (≥1)                                 |
+| `limit`  | `25`     | Results per page (1-50)                          |
+| `type`   | -        | `tv`, `movie`, `ova`, `special`, `ona`, `music`  |
 
-### Watch Endpoints
+#### Browse Anime
 
-| Endpoint                            | Description                   |
-| ----------------------------------- | ----------------------------- |
-| `GET /api/watch/{mal_id}/{episode}` | Get video sources for episode |
-| `GET /api/anime/{mal_id}/sources`   | All episodes with sources     |
-| `GET /api/anime/{mal_id}/animepahe` | Animepahe match info          |
-| `GET /api/anime/{mal_id}/episodes`  | Episode list from MAL         |
+```
+GET /api/browse/anime?status=airing&order_by=score&sort=desc&page=1&limit=25
+```
+
+| Param      | Default | Description                                            |
+| ---------- | ------- | ------------------------------------------------------ |
+| `status`   | -       | `airing`, `complete`, `upcoming`                       |
+| `order_by` | -       | `score`, `popularity`, `rank`, `members`, `start_date` |
+| `sort`     | `desc`  | `asc`, `desc`                                          |
+| `page`     | `1`     | Page number (≥1)                                       |
+| `limit`    | `25`    | Results per page (1-25)                                |
+
+#### Search Anime
+
+```
+GET /api/anime?q=naruto&page=1&limit=25
+```
+
+| Param   | Default | Description             |
+| ------- | ------- | ----------------------- |
+| `q`     | -       | Search query (required) |
+| `page`  | `1`     | Page number (≥1)        |
+| `limit` | `25`    | Results per page (1-25) |
+
+#### Anime Details
+
+```
+GET /api/anime/{mal_id}
+GET /api/anime/{mal_id}/recommendations?limit=12
+GET /api/anime/{mal_id}/characters?limit=12
+```
+
+| Param   | Default | Description        |
+| ------- | ------- | ------------------ |
+| `limit` | `12`    | Max results (1-50) |
+
+#### Seasons
+
+```
+GET /api/seasons/now?limit=25
+GET /api/seasons/upcoming?page=1&limit=25
+GET /api/seasons/{year}/{season}?limit=25
+```
+
+| Param    | Values                               |
+| -------- | ------------------------------------ |
+| `year`   | e.g., `2024`                         |
+| `season` | `winter`, `spring`, `summer`, `fall` |
+| `limit`  | Results per page (1-50)              |
+
+#### Schedule
+
+```
+GET /api/schedules?filter=monday&page=1
+```
+
+| Param    | Default | Description                  |
+| -------- | ------- | ---------------------------- |
+| `filter` | -       | `monday`-`sunday`, `unknown` |
+| `page`   | `1`     | Page number (≥1)             |
+
+---
+
+### Animepahe Endpoints (`/api/animepahe`)
+
+#### Latest Releases
+
+```
+GET /api/animepahe/latest?page=1&limit=12
+```
+
+| Param   | Default | Description             |
+| ------- | ------- | ----------------------- |
+| `page`  | `1`     | Page number (≥1)        |
+| `limit` | `12`    | Results per page (1-50) |
+
+#### Cookies (DDoS-Guard Bypass)
+
+```
+POST /api/animepahe/cookies
+Body: {"__ddg1": "...", "__ddg2_": "...", "SERVERID": "..."}
+
+GET /api/animepahe/cookies
+```
+
+Returns truncated cookie values for verification.
+
+#### Search
+
+```
+GET /api/animepahe/search?q=naruto
+```
+
+| Param | Description             |
+| ----- | ----------------------- |
+| `q`   | Search query (required) |
+
+#### Episodes
+
+```
+GET /api/animepahe/anime/{uuid}/episodes?page=1
+```
+
+| Param  | Default | Description          |
+| ------ | ------- | -------------------- |
+| `uuid` | -       | Animepahe anime UUID |
+| `page` | `1`     | Page number (≥1)     |
+
+#### Video Sources
+
+```
+GET /api/animepahe/episode/{uuid}/{session}/sources
+```
+
+| Param     | Description          |
+| --------- | -------------------- |
+| `uuid`    | Animepahe anime UUID |
+| `session` | Episode session ID   |
+
+#### Video Extraction
+
+```
+GET /api/animepahe/extract?url=https://kwik.cx/e/...
+```
+
+Extracts m3u8 URL from kwik embed.
+
+#### CORS Proxy
+
+```
+GET /api/animepahe/proxy?url=https://...
+```
+
+Proxies m3u8 playlists and video segments to bypass CORS.
+
+---
+
+### Watch Endpoints (`/api`)
+
+#### Watch Episode
+
+```
+GET /api/watch/{mal_id}/{episode}?quality=1080
+```
+
+| Param     | Default | Description                             |
+| --------- | ------- | --------------------------------------- |
+| `mal_id`  | -       | MyAnimeList anime ID                    |
+| `episode` | -       | Episode number                          |
+| `quality` | `1080`  | Preferred quality (1080, 720, 480, 360) |
+
+Returns video sources for a specific episode, automatically matching MAL to Animepahe.
+
+#### All Episode Sources
+
+```
+GET /api/anime/{mal_id}/sources
+```
+
+Returns all episodes with their video sources. **Warning**: Slow for long series.
+
+#### Animepahe Match
+
+```
+GET /api/anime/{mal_id}/animepahe
+```
+
+Returns Animepahe match info for a MAL ID (uuid, title match, episode count).
 
 ## DDoS-Guard Bypass
 
