@@ -7,6 +7,7 @@ import { AnimeGrid, AnimeGridSkeleton } from "@/components/anime-grid";
 import { TopAnimeSidebar } from "@/components/top-anime-sidebar";
 import { LatestReleases } from "@/components/latest-releases";
 import { HeroCarousel } from "@/components/hero-carousel";
+import { ContinueWatching } from "@/components/continue-watching";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 
@@ -94,6 +95,8 @@ export default function HomePage() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Main Content */}
         <div className="flex-1 space-y-8 sm:space-y-10">
+          <ContinueWatching />
+
           <LatestReleases />
 
           <section>

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { api, type VideoSource, type Anime, type EpisodeInfo } from "@/lib/api";
+import { saveWatchProgress } from "@/lib/watch-history";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -46,8 +48,10 @@ interface WatchPageProps {
 
 export default function WatchPage({ params }: WatchPageProps) {
   const { id, episode } = use(params);
+  const searchParams = useSearchParams();
   const malId = parseInt(id);
   const episodeNum = parseInt(episode);
+  const startTime = parseInt(searchParams.get("t") || "0");
 
   const [sources, setSources] = useState<VideoSource[]>([]);
   const [totalEpisodes, setTotalEpisodes] = useState<number>(0);
@@ -67,7 +71,100 @@ export default function WatchPage({ params }: WatchPageProps) {
   const [highlightedEp, setHighlightedEp] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [watchTime, setWatchTime] = useState(startTime);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { language, getTitle, getEpisodeTitle } = useLanguage();
+
+  // Default episode duration (24 minutes for most anime)
+  const DEFAULT_DURATION = 24 * 60;
+
+  // Refs
+  const watchTimeRef = useRef(startTime);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const lastSavedTimeRef = useRef(0);
+
+  // Listen for messages from the iframe (kwik.cx Plyr player sends these)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+
+      // kwik.cx sends currentTime as a number on timeupdate
+      if (typeof data === "number" && data >= 0) {
+        const currentTime = Math.floor(data);
+        watchTimeRef.current = currentTime;
+        setWatchTime(currentTime);
+        return;
+      }
+
+      // Handle string messages
+      if (typeof data === "string") {
+        if (data === "play") {
+          setIsPlaying(true);
+        } else if (data === "pause" || data === "stop" || data === "ended") {
+          setIsPlaying(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // Save watch progress when time updates (every 10 seconds to avoid spam)
+  useEffect(() => {
+    if (!anime || !selectedQuality) return;
+
+    const imageUrl =
+      anime.images?.webp?.large_image_url ||
+      anime.images?.jpg?.large_image_url ||
+      "/placeholder.png";
+
+    const saveProgress = (timestamp: number) => {
+      // Only save if time has changed by at least 5 seconds
+      if (Math.abs(timestamp - lastSavedTimeRef.current) < 5) return;
+      lastSavedTimeRef.current = timestamp;
+
+      saveWatchProgress({
+        malId,
+        episode: episodeNum,
+        timestamp,
+        duration: DEFAULT_DURATION,
+        animeTitle: anime.title || "",
+        animeTitleEnglish: anime.title_english,
+        imageUrl,
+        lastWatched: Date.now(),
+      });
+    };
+
+    // Save progress every 10 seconds based on actual watchTime from player
+    const interval = setInterval(() => {
+      if (watchTimeRef.current > 0) {
+        saveProgress(watchTimeRef.current);
+      }
+    }, 10000);
+
+    // Save progress when user leaves the page
+    const handleBeforeUnload = () => {
+      saveProgress(watchTimeRef.current);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Also listen for visibility change (user switches tabs)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        saveProgress(watchTimeRef.current);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Save final progress on cleanup
+      saveProgress(watchTimeRef.current);
+    };
+  }, [anime, selectedQuality, malId, episodeNum]);
 
   // Set page title
   useEffect(() => {
@@ -508,7 +605,8 @@ export default function WatchPage({ params }: WatchPageProps) {
               </div>
             ) : selectedQuality ? (
               <iframe
-                src={selectedQuality}
+                ref={iframeRef}
+                src={`${selectedQuality}${selectedQuality.includes("?") ? "&" : "#"}t=${startTime}`}
                 className="w-full h-full"
                 scrolling="no"
                 allowFullScreen
