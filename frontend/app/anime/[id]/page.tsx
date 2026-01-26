@@ -58,6 +58,14 @@ export default function AnimeDetailPage({ params }: AnimeDetailPageProps) {
   const { getTitle } = useLanguage();
 
   useEffect(() => {
+    if (anime) {
+      document.title = `${getTitle(anime)} - Aniways`;
+    } else {
+      document.title = "Loading... - Aniways";
+    }
+  }, [anime, getTitle]);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         const animeRes = await api.getAnime(parseInt(id));

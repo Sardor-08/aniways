@@ -47,6 +47,10 @@ export default function BrowsePage({ params }: BrowsePageProps) {
   const title = config?.title || "Browse";
 
   useEffect(() => {
+    document.title = `${title} - Aniways`;
+  }, [title]);
+
+  useEffect(() => {
     if (isValidCategory) {
       fetchBrowse(1);
     } else {

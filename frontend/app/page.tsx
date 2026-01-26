@@ -15,6 +15,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "Home - Aniways";
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         const seasonRes = await api.getUpcoming(1, 12);

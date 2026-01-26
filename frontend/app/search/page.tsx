@@ -19,6 +19,10 @@ function SearchContent() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
+    document.title = query ? `Search: ${query} - Aniways` : "Search - Aniways";
+  }, [query]);
+
+  useEffect(() => {
     if (query) {
       setSearchQuery(query);
       setPage(1);
@@ -64,7 +68,6 @@ function SearchContent() {
 
   return (
     <div className="space-y-8 mt-10">
-
       {loading ? (
         <AnimeGridSkeleton count={24} title={`Searching for "${query}"...`} />
       ) : results.length > 0 ? (

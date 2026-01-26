@@ -14,6 +14,10 @@ export default function UpcomingSeasonPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
+    document.title = "Upcoming Season - Aniways";
+  }, []);
+
+  useEffect(() => {
     fetchSeason(1);
   }, []);
 

@@ -69,6 +69,15 @@ export default function WatchPage({ params }: WatchPageProps) {
   const [isFocused, setIsFocused] = useState(false);
   const { language, getTitle, getEpisodeTitle } = useLanguage();
 
+  // Set page title
+  useEffect(() => {
+    if (anime) {
+      document.title = `${getTitle(anime)} - Episode ${episodeNum} - Aniways`;
+    } else {
+      document.title = `Episode ${episodeNum} - Aniways`;
+    }
+  }, [anime, episodeNum, getTitle]);
+
   // Load sort preference from localStorage
   useEffect(() => {
     const savedSort = localStorage.getItem("episode-sort") as "asc" | "desc";

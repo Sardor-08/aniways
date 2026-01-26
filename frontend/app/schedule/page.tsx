@@ -123,6 +123,10 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [activeDay, setActiveDay] = useState(getCurrentDay());
 
+  useEffect(() => {
+    document.title = "Schedule - Aniways";
+  }, []);
+
   const fetchScheduleForDay = useCallback(
     async (day: string) => {
       if (schedule[day] || loading[day]) return;

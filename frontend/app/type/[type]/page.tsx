@@ -33,6 +33,10 @@ export default function TypePage({ params }: TypePageProps) {
   const title = typeLabels[type.toLowerCase()] || `${type.toUpperCase()} Anime`;
 
   useEffect(() => {
+    document.title = `${title} - Aniways`;
+  }, [title]);
+
+  useEffect(() => {
     if (isValidType) {
       fetchByType(1);
     } else {

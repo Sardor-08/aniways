@@ -17,8 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aniways - Anime Streaming",
-  description: "Stream your favorite anime",
+  title: {
+    default: "Aniways - Anime Streaming",
+    template: "%s",
+  },
+  description: "Stream your favorite anime series and movies for free.",
 };
 
 export default function RootLayout({
