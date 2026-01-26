@@ -1,6 +1,9 @@
 
 <img width="1584" height="396" alt="Untitled design (2)" src="https://github.com/user-attachments/assets/22ee2675-bff8-48e2-b656-994245aa613a" />
 
+
+
+
 <div align="center">
 
 # Aniways
@@ -10,6 +13,9 @@ Anime streaming platform with a FastAPI backend and Next.js frontend.
 [![GitHub stars](https://img.shields.io/github/stars/hazavi/aniways?style=social)](https://github.com/hazavi/aniways/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/hazavi/aniways?style=social)](https://github.com/hazavi/aniways/fork)
 [![GitHub issues](https://img.shields.io/github/issues/hazavi/aniways)](https://github.com/hazavi/aniways/issues)
+
+## Preview
+https://github.com/user-attachments/assets/22f81946-6ab0-492f-a772-3238b08d196c
 
 </div>
 
