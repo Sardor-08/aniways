@@ -15,7 +15,9 @@ Anime streaming platform with a FastAPI backend and Next.js frontend.
 [![GitHub issues](https://img.shields.io/github/issues/hazavi/aniways)](https://github.com/hazavi/aniways/issues)
 
 ## Preview
-https://github.com/user-attachments/assets/22f81946-6ab0-492f-a772-3238b08d196c
+https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
+
+
 
 </div>
 
