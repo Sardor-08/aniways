@@ -1,8 +1,4 @@
-
 <img width="1584" height="396" alt="Untitled design (2)" src="https://github.com/user-attachments/assets/22ee2675-bff8-48e2-b656-994245aa613a" />
-
-
-
 
 <div align="center">
 
@@ -15,9 +11,8 @@ Anime streaming platform with a FastAPI backend and Next.js frontend.
 [![GitHub issues](https://img.shields.io/github/issues/hazavi/aniways)](https://github.com/hazavi/aniways/issues)
 
 ## Preview
+
 https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
-
-
 
 </div>
 
@@ -58,6 +53,9 @@ aniways/
 │
 └── frontend/
     ├── package.json
+    ├── electron/              # Electron desktop app
+    │   ├── main.js            # Main process
+    │   └── preload.js         # Preload script
     ├── app/                   # Next.js pages
     │   ├── page.tsx           # Home
     │   ├── anime/[id]/        # Anime details
@@ -193,6 +191,11 @@ npm start
 - shadcn/ui - UI components
 - HLS.js - Video streaming
 
+### Desktop App
+
+- Electron - Cross-platform desktop app
+- Electron Forge - Build & packaging
+
 ---
 
 ## Quick Start
@@ -227,7 +230,40 @@ chmod +x start.sh
 ./start.sh
 ```
 
-### Option 3: Manual
+### Option 3: Electron Desktop App
+
+Run as a standalone desktop application:
+
+```bash
+cd frontend
+npm install
+npm run electron:dev
+```
+
+or
+
+```bash
+./start-app.bat
+```
+
+This starts both the Next.js server and the Python backend automatically, then opens the Electron window.
+
+**Build Desktop App:**
+
+```bash
+cd frontend
+npm run electron:build
+```
+
+or
+
+```bash
+./build-app.bat
+```
+
+The packaged app will be in `frontend/out/make/`.
+
+### Option 4: Manual
 
 1. Start backend:
 
