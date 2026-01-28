@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, Menu } = require("electron");
 const path = require("path");
 const { spawn, exec } = require("child_process");
 const http = require("http");
@@ -23,6 +23,152 @@ const BACKEND_PORT = process.env.BACKEND_PORT || 4444;
 
 console.log(`Starting Aniways in ${isDev ? "development" : "production"} mode`);
 
+function createMenu() {
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Reload',
+          accelerator: 'CmdOrCtrl+R',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) focusedWindow.reload();
+          }
+        },
+        {
+          label: 'Force Reload',
+          accelerator: 'CmdOrCtrl+Shift+R',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) focusedWindow.webContents.reloadIgnoringCache();
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Quit',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => {
+            app.quit();
+          }
+        }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Toggle Fullscreen',
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Command+F' : 'F11',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
+            }
+          }
+        },
+        {
+          label: 'Minimize',
+          accelerator: 'CmdOrCtrl+M',
+          role: 'minimize'
+        },
+        {
+          label: 'Maximize',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              if (focusedWindow.isMaximized()) {
+                focusedWindow.unmaximize();
+              } else {
+                focusedWindow.maximize();
+              }
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Zoom In',
+          accelerator: 'CmdOrCtrl+Plus',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              const currentZoom = focusedWindow.webContents.getZoomLevel();
+              focusedWindow.webContents.setZoomLevel(currentZoom + 0.5);
+            }
+          }
+        },
+        {
+          label: 'Zoom Out',
+          accelerator: 'CmdOrCtrl+-',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              const currentZoom = focusedWindow.webContents.getZoomLevel();
+              focusedWindow.webContents.setZoomLevel(currentZoom - 0.5);
+            }
+          }
+        },
+        {
+          label: 'Reset Zoom',
+          accelerator: 'CmdOrCtrl+0',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              focusedWindow.webContents.setZoomLevel(0);
+            }
+          }
+        }
+      ]
+    },
+    {
+      label: 'Navigation',
+      submenu: [
+        {
+          label: 'Back',
+          accelerator: 'Alt+Left',
+          click: (item, focusedWindow) => {
+            if (focusedWindow && focusedWindow.webContents.canGoBack()) {
+              focusedWindow.webContents.goBack();
+            }
+          }
+        },
+        {
+          label: 'Forward',
+          accelerator: 'Alt+Right',
+          click: (item, focusedWindow) => {
+            if (focusedWindow && focusedWindow.webContents.canGoForward()) {
+              focusedWindow.webContents.goForward();
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Home',
+          accelerator: 'CmdOrCtrl+H',
+          click: (item, focusedWindow) => {
+            if (focusedWindow) {
+              focusedWindow.loadURL(`http://localhost:${PORT}`);
+            }
+          }
+        }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'GitHub Repository',
+          click: () => {
+            shell.openExternal('https://github.com/hazavi/aniways');
+          }
+        },
+        {
+          label: 'Report Issue',
+          click: () => {
+            shell.openExternal('https://github.com/hazavi/aniways/issues');
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 function createWindow() {
   // Get primary display dimensions for maximized window
   const { screen } = require("electron");
@@ -44,9 +190,16 @@ function createWindow() {
       enableWebSQL: false,
     },
     titleBarStyle: "default",
-    autoHideMenuBar: true,
+    autoHideMenuBar: false, // Show menu bar for fullscreen access
     show: false,
     backgroundColor: "#09090b", // Dark background to prevent white flash
+  });
+
+  // Set up keyboard shortcut for fullscreen (F11)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F11' && input.type === 'keyDown') {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+    }
   });
 
   // Maximize window on start
@@ -277,6 +430,9 @@ function cleanup() {
 
 app.whenReady().then(async () => {
   console.log("App is ready, starting servers...");
+  
+  // Create menu first
+  createMenu();
   
   try {
     // Start backend first, then Next.js
