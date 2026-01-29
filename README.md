@@ -14,6 +14,9 @@ Anime streaming platform with a FastAPI backend and Next.js frontend.
 
 https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
 
+## Quick Install Tutorial
+https://github.com/user-attachments/assets/e5c7999c-f719-428b-9d80-9bdf21ec44b2
+
 </div>
 
 ## Disclaimer
