@@ -9,13 +9,38 @@ cd /d "%~dp0"
 echo [1/2] Installing Backend Dependencies...
 echo.
 
+REM Check if Python is available
+echo Checking for Python installation...
+python --version >nul 2>&1
+if errorlevel 1 (
+    py --version >nul 2>&1
+    if errorlevel 1 (
+        echo.
+        echo ERROR: Python is not installed or not in your PATH
+        echo.
+        echo Please install Python 3.8 or higher from:
+        echo https://www.python.org/downloads/
+        echo.
+        echo Make sure to check "Add Python to PATH" during installation
+        echo.
+        pause
+        exit /b 1
+    )
+    set PYTHON_CMD=py
+) else (
+    set PYTHON_CMD=python
+)
+
+echo Found Python: %PYTHON_CMD%
+echo.
+
 REM Check if virtual environment exists
 if not exist ".venv\Scripts\activate.bat" (
     echo Creating Python virtual environment...
-    python -m venv .venv
+    %PYTHON_CMD% -m venv .venv
     if errorlevel 1 (
         echo ERROR: Failed to create virtual environment
-        echo Make sure Python is installed and in your PATH
+        echo Please make sure Python is properly installed
         pause
         exit /b 1
     )
