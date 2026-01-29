@@ -30,9 +30,9 @@ export function saveWatchProgress(item: WatchHistoryItem): void {
   try {
     const history = getWatchHistory();
     
-    // Remove existing entry for same anime/episode
+    // Remove existing entry for the same anime (any episode)
     const filtered = history.filter(
-      (h) => !(h.malId === item.malId && h.episode === item.episode)
+      (h) => h.malId !== item.malId
     );
     
     // Add new entry at the beginning
