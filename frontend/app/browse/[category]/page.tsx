@@ -3,8 +3,13 @@
 import { useEffect, useState, use } from "react";
 import { api, type Anime } from "@/lib/api";
 import { AnimeGrid, AnimeGridSkeleton } from "@/components/anime-grid";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 
 const categoryConfig: Record<
   string,
@@ -110,29 +115,31 @@ export default function BrowsePage({ params }: BrowsePageProps) {
 
           {/* Pagination */}
           {(hasNextPage || page > 1) && (
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1}
-                className="gap-2 hover:cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={!hasNextPage}
-                className="gap-2 hover:cursor-pointer"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <Pagination className="pt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => handlePageChange(page - 1)}
+                    className={
+                      page <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-sm text-muted-foreground px-4">
+                    Page {page} of {totalPages}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => handlePageChange(page + 1)}
+                    className={
+                      !hasNextPage ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           )}
         </>
       ) : (
