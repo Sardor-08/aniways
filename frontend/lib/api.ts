@@ -12,6 +12,37 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4444";
 export type { Anime, WatchResponse, AnimeEpisodesResponse, LatestRelease, EpisodeInfo };
 export type { Episode, VideoSource } from "@/types";
 
+// Retry configuration for API calls
+const MAX_RETRIES = 5;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+const MAX_RETRY_DELAY = 10000; // 10 seconds
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry<T>(
+  url: string,
+  retries = MAX_RETRIES,
+  delay = INITIAL_RETRY_DELAY
+): Promise<T> {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (error) {
+    // Check if it's a network error (backend not ready) and we have retries left
+    if (retries > 0 && (error instanceof TypeError || (error instanceof Error && error.message.includes("fetch")))) {
+      console.log(`API not ready, retrying in ${delay}ms... (${retries} retries left)`);
+      await sleep(delay);
+      // Exponential backoff with max delay cap
+      const nextDelay = Math.min(delay * 1.5, MAX_RETRY_DELAY);
+      return fetchWithRetry<T>(url, retries - 1, nextDelay);
+    }
+    throw error;
+  }
+}
+
 async function fetchApi<T>(
   endpoint: string,
   params?: Record<string, string | number>
@@ -23,9 +54,7 @@ async function fetchApi<T>(
     });
   }
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return fetchWithRetry<T>(url.toString());
 }
 
 // API endpoints (MAL Scraper + Animepahe)
