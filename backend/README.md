@@ -4,6 +4,9 @@ A FastAPI-based backend for anime streaming, providing data from MyAnimeList (vi
 
 ## Features
 
+- **User Authentication** - JWT-based auth with 30-day token expiry
+- **Anime Lists** - Track anime with status (Plan to Watch, Watching, Completed, Paused, Dropped)
+- **SQLite Database** - Persistent storage with SQLAlchemy ORM
 - **MyAnimeList Integration** - Anime metadata, search, seasons, schedule via Jikan API
 - **Animepahe Scraper** - Video source extraction with DDoS-Guard bypass
 - **Kwik Extractor** - Decodes obfuscated video URLs from kwik.cx
@@ -65,6 +68,8 @@ Configuration is managed via environment variables with sensible defaults:
 | `CACHE_TTL_LIST`     | `300`                      | Cache TTL for list endpoints (seconds)     |
 | `CACHE_TTL_DETAIL`   | `3600`                     | Cache TTL for detail endpoints (seconds)   |
 | `JIKAN_RATE_LIMIT`   | `0.35`                     | Min delay between Jikan requests (seconds) |
+| `DATA_DIR`           | `backend/` or `/app/data`  | Directory for SQLite database              |
+| `SECRET_KEY`         | (auto-generated)           | JWT signing key (set in production!)       |
 
 ## Project Structure
 
@@ -90,13 +95,88 @@ backend/
 │   │       ├── episodes.py # Episode listing
 │   │       ├── sources.py # Video source extraction
 │   │       └── latest.py  # Latest releases
+│   ├── database/          # Database layer
+│   │   ├── database.py    # SQLite connection & session
+│   │   └── models.py      # SQLAlchemy models (User, AnimeListItem)
+│   ├── auth/              # Authentication
+│   │   ├── security.py    # JWT & password hashing
+│   │   └── schemas.py     # Pydantic schemas
 │   └── routes/            # API endpoints
+│       ├── auth.py        # Register, login, user info
+│       ├── animelist.py   # Anime list management
 │       ├── mal.py         # MyAnimeList/Jikan routes
 │       ├── animepahe.py   # Animepahe routes
 │       └── watch.py       # Watch/video source routes
 ```
 
 ## API Reference
+
+### Authentication Endpoints (`/api/auth`)
+
+#### Register
+
+```
+POST /api/auth/register
+Body: {"username": "user", "password": "pass"}
+```
+
+Returns user info and JWT token.
+
+#### Login
+
+```
+POST /api/auth/login
+Body: {"username": "user", "password": "pass"}
+```
+
+Returns JWT token (valid for 30 days).
+
+#### Get Current User
+
+```
+GET /api/auth/me
+Header: Authorization: Bearer <token>
+```
+
+---
+
+### Anime List Endpoints (`/api/list`)
+
+#### Get User's List
+
+```
+GET /api/list
+Header: Authorization: Bearer <token>
+```
+
+| Param    | Default | Description                                         |
+| -------- | ------- | --------------------------------------------------- |
+| `status` | -       | Filter by status: `plan_to_watch`, `watching`, etc. |
+
+#### Add to List
+
+```
+POST /api/list
+Header: Authorization: Bearer <token>
+Body: {"mal_id": 1, "status": "watching"}
+```
+
+#### Update List Item
+
+```
+PUT /api/list/{mal_id}
+Header: Authorization: Bearer <token>
+Body: {"status": "completed"}
+```
+
+#### Remove from List
+
+```
+DELETE /api/list/{mal_id}
+Header: Authorization: Bearer <token>
+```
+
+---
 
 ### MAL Endpoints (`/api`)
 

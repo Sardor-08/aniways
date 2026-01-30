@@ -4,7 +4,11 @@
 
 # Aniways
 
-Anime streaming platform with a FastAPI backend and Next.js frontend.
+A modern anime streaming application built with Next.js, FastAPI and Electron.
+
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg" width="40" height="40" title="Next.js"/> &nbsp;&nbsp;
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original.svg" width="40" height="40" title="FastAPI"/> &nbsp;&nbsp;
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/electron/electron-original.svg" width="40" height="40" title="Electron"/> &nbsp;&nbsp;
 
 [![GitHub stars](https://img.shields.io/github/stars/hazavi/aniways?style=social)](https://github.com/hazavi/aniways/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/hazavi/aniways?style=social)](https://github.com/hazavi/aniways/fork)
@@ -15,6 +19,7 @@ Anime streaming platform with a FastAPI backend and Next.js frontend.
 https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
 
 ## Quick Install Tutorial
+
 https://github.com/user-attachments/assets/e5c7999c-f719-428b-9d80-9bdf21ec44b2
 
 </div>
@@ -33,6 +38,16 @@ This project is for educational and personal use only.
 ## Overview
 
 Aniways provides anime metadata from MyAnimeList (via Jikan API) and video sources from Animepahe. The backend handles data fetching, caching, and video URL extraction while the frontend delivers a responsive viewing experience.
+
+### Features
+
+- **Stream Anime** - Watch from Animepahe sources with quality selection
+- **Anime Lists** - Track your anime (Plan to Watch, Watching, Completed, Paused, Dropped)
+- **User Accounts** - Register and login with JWT authentication
+- **Continue Watching** - Resume from where you left off
+- **Search & Browse** - Find anime by name, genre, season, or schedule
+- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Desktop App** - Run as a standalone Electron application
 
 ## Project Structure
 
@@ -122,6 +137,10 @@ Server runs at `http://localhost:4444`
 | GET /api/schedules                  | Weekly schedule                       |
 | GET /api/watch/{id}/{episode}       | Video sources                         |
 | GET /api/animepahe/latest           | Latest releases                       |
+| POST /api/auth/register             | Create new account                    |
+| POST /api/auth/login                | Login and get JWT token               |
+| GET /api/list                       | Get user's anime list                 |
+| POST /api/list                      | Add anime to list                     |
 
 ### DDoS-Guard Cookies
 
@@ -174,6 +193,9 @@ npm start
 | /browse/[category]    | Browse by category        |
 | /schedule             | Weekly broadcast schedule |
 | /season/upcoming      | Upcoming anime            |
+| /profile              | User profile & anime list |
+| /login                | Login page                |
+| /signup               | Registration page         |
 
 ---
 
@@ -182,9 +204,11 @@ npm start
 ### Backend
 
 - FastAPI - Web framework
+- SQLAlchemy - ORM with SQLite database
 - httpx - Async HTTP client
 - BeautifulSoup4 - HTML parsing
 - Jikan API - MyAnimeList data
+- JWT - User authentication
 
 ### Frontend
 

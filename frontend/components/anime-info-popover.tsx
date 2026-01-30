@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,11 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { useLanguage } from "@/components/language-provider";
+import { useAuth } from "@/components/auth-provider";
 import { api } from "@/lib/api";
+
 import { Play, Info, Star } from "lucide-react";
+import { AddToListButton } from "@/components/add-to-list-button";
 
 interface AnimeData {
   mal_id: number;
@@ -27,6 +30,12 @@ interface AnimeData {
   episodes?: number;
   aired?: { string?: string; from?: string; to?: string };
   genres?: { mal_id: number; name: string }[];
+  images?: {
+    jpg: {
+      image_url?: string;
+      large_image_url?: string;
+    };
+  };
 }
 
 interface AnimeInfoPopoverProps {
@@ -47,6 +56,7 @@ export function AnimeInfoPopover({
   upcoming = false,
 }: AnimeInfoPopoverProps) {
   const { getTitle } = useLanguage();
+  const { user } = useAuth();
   const [anime, setAnime] = useState<AnimeData>(initialAnime);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
@@ -101,113 +111,130 @@ export function AnimeInfoPopover({
         side="right"
         align="start"
         sideOffset={8}
-        className="w-80 p-0 bg-popover border-0 rounded-xl overflow-hidden shadow-xl z-[100]"
+        className="w-80 p-0 bg-popover border-0 rounded-xl overflow-visible shadow-xl z-[100]"
       >
-        <div className="p-4 space-y-3 text-primary">
-          {/* Title */}
-          <div>
-            <h3 className="font-bold text-lg leading-tight">{title}</h3>
-            {anime.title_japanese && (
-              <p className="text-sm mt-0.5">{anime.title_japanese}</p>
-            )}
-          </div>
-
-          {/* Badges row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {episode !== undefined && (
-              <Badge className="bg-black/100 text-white text-xs px-1.5 py-0.5">
-                EP {episode}
-              </Badge>
-            )}
-            {anime.rating && (
-              <Badge className="bg-black/100 text-xs text-white px-2 py-0.5">
-                {anime.rating.split(" - ")[0]}
-              </Badge>
-            )}
-            {anime.score && (
-              <div className="flex items-center gap-1 text-sm">
-                <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-                <span>{anime.score}</span>
-              </div>
-            )}
-            {anime.type && (
-              <div className="flex items-center gap-1 text-sm font-medium ml-1.5">
-                <span>{anime.type}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Loading state */}
-          {loading && (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
+        <div className="relative">
+          <div className="p-4 space-y-3 text-primary">
+            {/* Title */}
+            <div>
+              <h3 className="font-bold text-lg leading-tight">{title}</h3>
+              {anime.title_japanese && (
+                <p className="text-sm mt-0.5">{anime.title_japanese}</p>
+              )}
             </div>
-          )}
 
-          {/* Synopsis */}
-          {!loading && anime.synopsis && (
-            <p className="text-sm line-clamp-3">{anime.synopsis}</p>
-          )}
+            {/* Badges row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {episode !== undefined && (
+                <Badge className="bg-black/100 text-white text-xs px-1.5 py-0.5">
+                  EP {episode}
+                </Badge>
+              )}
+              {anime.rating && (
+                <Badge className="bg-black/100 text-xs text-white px-2 py-0.5">
+                  {anime.rating.split(" - ")[0]}
+                </Badge>
+              )}
+              {anime.score && (
+                <div className="flex items-center gap-1 text-sm">
+                  <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+                  <span>{anime.score}</span>
+                </div>
+              )}
+              {anime.type && (
+                <div className="flex items-center gap-1 text-sm font-medium ml-1.5">
+                  <span>{anime.type}</span>
+                </div>
+              )}
+            </div>
 
-          {/* Details */}
-          {!loading &&
-            (airedString ||
-              anime.status ||
-              (anime.genres && anime.genres.length > 0)) && (
-              <div className="space-y-1 text-sm">
-                {airedString && (
-                  <p>
-                    <span className="text-sm">Aired: </span>
-                    <span className="font-medium">{airedString}</span>
-                  </p>
-                )}
-                {anime.status && (
-                  <p>
-                    <span className="text-sm">Status: </span>
-                    <span className="font-medium text-green-500">
-                      {anime.status}
-                    </span>
-                  </p>
-                )}
-                {anime.genres && anime.genres.length > 0 && (
-                  <p className="flex items-center gap-1 flex-wrap">
-                    <span className="text-sm">Genres: </span>
-                    {anime.genres.map((g) => (
-                      <span
-                        key={g.mal_id}
-                        className="text-white font-medium bg-black/100 px-1.5 py-0.5 rounded-lg text-xs"
-                      >
-                        {g.name}
-                      </span>
-                    ))}
-                  </p>
-                )}
+            {/* Loading state */}
+            {loading && (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
               </div>
             )}
-        </div>
 
-        {/* Action buttons */}
-        <div className="p-3 pt-0 flex gap-2">
-          {upcoming || anime.status === "Not yet aired" ? (
-            <Link
-              href={detailsUrl}
-              className="flex items-center justify-center rounded-2xl gap-2 flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 transition-colors text-white text-sm"
-            >
-              <span className="font-semibold">Details</span>
-            </Link>
-          ) : (
-            <Link
-              href={linkUrl}
-              className="flex items-center justify-center rounded-2xl gap-2 flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 transition-colors text-white text-sm"
-            >
-              <span className="font-semibold">
-                {watchUrl ? "Watch" : "Watch now"}
-              </span>
-              <Play className="w-4 h-4 fill-white" />
-            </Link>
-          )}
+            {/* Synopsis */}
+            {!loading && anime.synopsis && (
+              <p className="text-sm line-clamp-3">{anime.synopsis}</p>
+            )}
+
+            {/* Details */}
+            {!loading &&
+              (airedString ||
+                anime.status ||
+                (anime.genres && anime.genres.length > 0)) && (
+                <div className="space-y-1 text-sm">
+                  {airedString && (
+                    <p>
+                      <span className="text-sm">Aired: </span>
+                      <span className="font-medium">{airedString}</span>
+                    </p>
+                  )}
+                  {anime.status && (
+                    <p>
+                      <span className="text-sm">Status: </span>
+                      <span className="font-medium text-green-500">
+                        {anime.status}
+                      </span>
+                    </p>
+                  )}
+                  {anime.genres && anime.genres.length > 0 && (
+                    <p className="flex items-center gap-1 flex-wrap">
+                      <span className="text-sm">Genres: </span>
+                      {anime.genres.map((g) => (
+                        <span
+                          key={g.mal_id}
+                          className="text-white font-medium bg-black/100 px-1.5 py-0.5 rounded-lg text-xs"
+                        >
+                          {g.name}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="p-3 pt-0 flex gap-2">
+            {upcoming || anime.status === "Not yet aired" ? (
+              <Link
+                href={detailsUrl}
+                className="flex items-center justify-center rounded-2xl gap-2 flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 transition-colors text-white text-sm"
+              >
+                <span className="font-semibold">Details</span>
+              </Link>
+            ) : (
+              <Link
+                href={linkUrl}
+                className="flex items-center justify-center rounded-2xl gap-2 flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 transition-colors text-white text-sm"
+              >
+                <span className="font-semibold">
+                  {watchUrl ? "Watch" : "Watch now"}
+                </span>
+                <Play className="w-4 h-4 fill-white" />
+              </Link>
+            )}
+
+            {/* Add to List Button */}
+            {user && (
+              <AddToListButton
+                malId={initialAnime.mal_id}
+                title={initialAnime.title}
+                titleEnglish={initialAnime.title_english}
+                imageUrl={
+                  initialAnime.images?.jpg?.large_image_url ||
+                  initialAnime.images?.jpg?.image_url
+                }
+                totalEpisodes={initialAnime.episodes}
+                compact
+              />
+            )}
+          </div>
         </div>
       </HoverCardContent>
     </HoverCard>

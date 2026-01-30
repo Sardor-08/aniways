@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useLanguage } from "@/components/language-provider";
 import { AnimeInfoPopover } from "@/components/anime-info-popover";
+import { AddToListButton } from "@/components/add-to-list-button";
 import { Play, ChevronRight, ChevronLeft } from "lucide-react";
 
 interface AnimeDetailPageProps {
@@ -225,6 +226,15 @@ export default function AnimeDetailPage({ params }: AnimeDetailPageProps) {
                 Not Available
               </Button>
             )}
+            <AddToListButton
+              malId={anime.mal_id}
+              title={anime.title}
+              titleEnglish={anime.title_english}
+              imageUrl={
+                anime.images.jpg.large_image_url || anime.images.jpg.image_url
+              }
+              totalEpisodes={anime.episodes}
+            />
           </div>
 
           {/* Synopsis */}
@@ -707,8 +717,13 @@ function AnimeDetailSkeleton() {
             <Skeleton className="h-5 w-12" />
             <Skeleton className="h-5 w-16" />
           </div>
+
           {/* Action Button */}
-          <Skeleton className="h-10 w-32" />
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+
           {/* Synopsis */}
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />

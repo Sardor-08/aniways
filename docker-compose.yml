@@ -8,6 +8,9 @@ services:
       - HOST=0.0.0.0
       - PORT=4444
       - DEBUG=false
+      - DATA_DIR=/app/data
+    volumes:
+      - aniways-data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4444/health"]
@@ -25,3 +28,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  aniways-data:

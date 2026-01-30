@@ -28,6 +28,11 @@ env/
 
 # IDE
 .idea/
+
+# Database - DO NOT COMMIT
+*.db
+*.db-wal
+*.db-shm
 .vscode/
 *.swp
 *.swo

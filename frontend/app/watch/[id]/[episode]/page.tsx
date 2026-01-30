@@ -436,10 +436,10 @@ export default function WatchPage({ params }: WatchPageProps) {
 
       {/* Main Layout: Video first on mobile, then Info | Video | Episodes on desktop */}
       <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-6 lg:mt-10">
-        {/* Left: Anime Info - Hidden on mobile, shown on desktop */}
+        {/* Left: Anime Info - Only shown on 2xl screens and up */}
         {anime && !isExpanded && (
-          <div className="hidden lg:block lg:w-72 flex-shrink-0">
-            <ScrollArea className="h-[420px] lg:h-[420px] pr-3">
+          <div className="hidden 2xl:block 2xl:w-72 flex-shrink-0">
+            <ScrollArea className="h-[420px] pr-3">
               <div className="space-y-3">
                 {/* Poster */}
                 <div className="relative aspect-[3/4] w-full max-w-[120px] mx-auto rounded-lg overflow-hidden">
@@ -626,9 +626,9 @@ export default function WatchPage({ params }: WatchPageProps) {
           {/* Video Controls */}
           <div className="py-2">
             {/* Mobile: Stack controls, Desktop: Single row */}
-            <div className="flex flex-col sm:grid sm:grid-cols-4 items-center gap-2">
-              {/* Row 1 Mobile / Col 1 Desktop: Previous */}
-              <div className="hidden sm:block justify-self-start">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {/* Previous - Hidden on mobile */}
+              <div className="hidden lg:block">
                 {episodeNum > 1 && (
                   <Link href={`/watch/${id}/${episodeNum - 1}`}>
                     <Button
@@ -644,7 +644,7 @@ export default function WatchPage({ params }: WatchPageProps) {
               </div>
 
               {/* Server & Quality - Always visible */}
-              <div className="w-full sm:w-auto sm:justify-self-center">
+              <div className="flex-shrink-0">
                 {sources.length > 0 && (
                   <div className="flex items-center justify-center gap-2">
                     {/* Server Toggle */}
@@ -705,8 +705,52 @@ export default function WatchPage({ params }: WatchPageProps) {
                 )}
               </div>
 
-              {/* Mobile: Prev/Next + Expand/Focus row */}
-              <div className="flex sm:hidden items-center justify-between w-full">
+              {/* Expand & Focus buttons */}
+              <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 gap-1 text-muted-foreground hover:text-foreground hover:cursor-pointer"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  title={isExpanded ? "Show info" : "Expand player"}
+                >
+                  {isExpanded ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                  <span className="text-xs">Expand</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-8 px-2 gap-1 hover:cursor-pointer ${isFocused ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setIsFocused(!isFocused)}
+                  title={isFocused ? "Exit focus" : "Focus mode"}
+                >
+                  <Focus className="h-4 w-4" />
+                  <span className="text-xs">Focus</span>
+                </Button>
+              </div>
+
+              {/* Next - Hidden on mobile */}
+              <div className="hidden lg:block flex-shrink-0">
+                {(totalEpisodes === 0 || episodeNum < totalEpisodes) && (
+                  <Link href={`/watch/${id}/${episodeNum + 1}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3 gap-1.5 text-muted-foreground hover:text-foreground hover:cursor-pointer"
+                    >
+                      <span className="text-xs">Next</span>
+                      <SkipForward className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              {/* Mobile controls row */}
+              <div className="flex lg:hidden items-center justify-between w-full mt-2">
                 {episodeNum > 1 ? (
                   <Link href={`/watch/${id}/${episodeNum - 1}`}>
                     <Button
@@ -719,7 +763,7 @@ export default function WatchPage({ params }: WatchPageProps) {
                     </Button>
                   </Link>
                 ) : (
-                  <div />
+                  <div className="w-16" />
                 )}
                 <div className="flex items-center gap-1">
                   <Button
@@ -755,53 +799,7 @@ export default function WatchPage({ params }: WatchPageProps) {
                     </Button>
                   </Link>
                 ) : (
-                  <div />
-                )}
-              </div>
-
-              {/* Desktop: Expand & Focus */}
-              <div className="hidden sm:flex items-center justify-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 gap-1 text-muted-foreground hover:text-foreground hover:cursor-pointer"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  title={isExpanded ? "Show info" : "Expand player"}
-                >
-                  {isExpanded ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                  <span className="text-xs hidden sm:inline">
-                    {isExpanded ? "Collapse" : "Expand"}
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`h-8 px-2 gap-1 hover:cursor-pointer ${isFocused ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setIsFocused(!isFocused)}
-                  title={isFocused ? "Exit focus" : "Focus mode"}
-                >
-                  <Focus className="h-4 w-4" />
-                  <span className="text-xs hidden sm:inline">Focus</span>
-                </Button>
-              </div>
-
-              {/* Desktop: Next */}
-              <div className="hidden sm:block justify-self-end">
-                {(totalEpisodes === 0 || episodeNum < totalEpisodes) && (
-                  <Link href={`/watch/${id}/${episodeNum + 1}`}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-3 gap-1.5 text-muted-foreground hover:text-foreground hover:cursor-pointer"
-                    >
-                      <span className="text-xs">Next</span>
-                      <SkipForward className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
+                  <div className="w-16" />
                 )}
               </div>
             </div>
@@ -957,8 +955,8 @@ function WatchSkeleton() {
     <div className="space-y-4 mt-6 mb-10 px-4 md:px-10 lg:px-20">
       <Skeleton className="h-5 w-64" />
       <div className="flex flex-col lg:flex-row lg:items-start gap-4 mt-10">
-        {/* Info */}
-        <div className="lg:w-72 flex-shrink-0 space-y-3">
+        {/* Info - Only on 2xl */}
+        <div className="hidden 2xl:block 2xl:w-72 flex-shrink-0 space-y-3">
           <Skeleton className="aspect-[3/4] w-[120px] mx-auto rounded-lg" />
           <Skeleton className="h-6 w-3/4" />
           <Skeleton className="h-4 w-1/2" />
@@ -983,17 +981,17 @@ function WatchSkeleton() {
             style={{ aspectRatio: "16/9" }}
           />
           {/* Video Controls */}
-          <div className="grid grid-cols-4 items-center gap-2 py-2">
-            <Skeleton className="h-8 w-20" />
+          <div className="flex flex-wrap items-center justify-center gap-2 py-2">
+            <Skeleton className="hidden lg:block h-8 w-20" />
             <div className="flex items-center justify-center gap-2">
               <Skeleton className="h-7 w-20" />
               <Skeleton className="h-7 w-20" />
             </div>
-            <div className="flex items-center justify-center gap-1">
-              <Skeleton className="h-8 w-16" />
+            <div className="hidden lg:flex items-center gap-1">
+              <Skeleton className="h-8 w-20" />
               <Skeleton className="h-8 w-16" />
             </div>
-            <Skeleton className="h-8 w-20 justify-self-end" />
+            <Skeleton className="hidden lg:block h-8 w-20" />
           </div>
         </div>
         {/* Episodes */}

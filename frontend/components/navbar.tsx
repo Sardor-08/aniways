@@ -4,10 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Search, ChevronDown, Loader2, Star, Menu, X } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  Loader2,
+  Star,
+  Menu,
+  X,
+  User,
+  LogIn,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useLanguage } from "@/components/language-provider";
+import { useAuth } from "@/components/auth-provider";
 import { api, type Anime } from "@/lib/api";
 import {
   DropdownMenu,
@@ -34,6 +44,7 @@ const browse = [
 
 export function Navbar() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Anime[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -294,6 +305,26 @@ export function Navbar() {
             </div>
 
             <ThemeToggle />
+
+            {/* User Menu */}
+            {!authLoading &&
+              (isAuthenticated ? (
+                <Link
+                  href="/profile"
+                  className="p-2 hover:bg-accent/50 rounded-full transition-colors"
+                  title={user?.username}
+                >
+                  <User className="h-5 w-5" />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="p-2 hover:bg-accent/50 rounded-full transition-colors"
+                  title="Login"
+                >
+                  <LogIn className="h-5 w-5" />
+                </Link>
+              ))}
           </div>
         </div>
       </header>
