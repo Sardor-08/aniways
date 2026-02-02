@@ -2,10 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.5] - 2026-01-30
+## [v1.5.1] - 2026-02-2
 
 ### Added
 
+- **Windows Executable**: Standalone Windows installer (.exe) available in releases
+- **Automated Release Builds**: GitHub Actions workflow for automatic Windows builds on version tags
+- **Build Script**: `build-windows-exe.bat` for local Windows executable builds
 - **SQLite Database**: Persistent storage using SQLAlchemy with SQLite
   - User authentication with JWT tokens (30-day expiry)
   - Anime list management (plan to watch, watching, completed, paused, dropped)
