@@ -3,15 +3,6 @@ const path = require("path");
 const { spawn, exec } = require("child_process");
 const http = require("http");
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling
-try {
-  if (require("electron-squirrel-startup")) {
-    app.quit();
-  }
-} catch (e) {
-  // electron-squirrel-startup not available in dev
-}
-
 let mainWindow;
 let nextServer;
 let backendServer;

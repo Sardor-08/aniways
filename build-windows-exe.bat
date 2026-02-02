@@ -36,7 +36,7 @@ if exist "public" (
 
 echo.
 echo [4/4] Building Electron executable...
-call npx electron-forge make --platform win32 --arch x64
+call npm run electron:make
 if %errorlevel% neq 0 (
     echo ERROR: Failed to build Electron app!
     pause
@@ -48,9 +48,9 @@ echo =========================================
 echo   Build Complete!
 echo =========================================
 echo.
-echo Your Windows executable is located in:
-echo   frontend\out\make\squirrel.windows\x64\
+echo Your Windows installer is located in:
+echo   frontend\dist\
 echo.
-echo The installer (.exe) and ZIP file are ready!
+echo The installer (.exe) is ready!
 echo.
 pause

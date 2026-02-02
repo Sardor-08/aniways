@@ -38,17 +38,17 @@ if (fs.existsSync(publicPath)) {
 
 console.log("✅ Static files copied!\n");
 
-// Step 3: Package with Electron Forge
+// Step 3: Package with Electron Builder
 console.log("⚡ Step 3: Packaging Electron app...");
 try {
-  execSync("npx electron-forge make", { stdio: "inherit" });
+  execSync("npm run electron:make", { stdio: "inherit" });
   console.log("✅ Electron packaging complete!\n");
 } catch (error) {
   console.error("❌ Electron packaging failed!");
   process.exit(1);
 }
 
-console.log("🎉 Build complete! Check the 'out' folder for your packaged app.");
+console.log("🎉 Build complete! Check the 'dist' folder for your installer.");
 
 // Helper function to copy recursively
 function copyRecursive(src, dest) {
