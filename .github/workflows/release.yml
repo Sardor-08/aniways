@@ -1,0 +1,159 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g., v1.0.0)"
+        required: true
+        default: "v0.1.0"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Next.js
+        working-directory: frontend
+        run: npm run build
+
+      - name: Copy static files
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          # Copy static folder to standalone
+          if (Test-Path ".next/static") {
+            New-Item -ItemType Directory -Force -Path ".next/standalone/.next/static"
+            Copy-Item -Recurse -Force ".next/static/*" ".next/standalone/.next/static/"
+          }
+
+          # Copy public folder to standalone
+          if (Test-Path "public") {
+            New-Item -ItemType Directory -Force -Path ".next/standalone/public"
+            Copy-Item -Recurse -Force "public/*" ".next/standalone/public/"
+          }
+
+      - name: Build Electron app for Windows
+        working-directory: frontend
+        run: npx electron-forge make --platform win32 --arch x64
+
+      - name: List output files
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          Write-Host "Contents of out/make:"
+          Get-ChildItem -Recurse out/make | ForEach-Object { Write-Host $_.FullName }
+
+      - name: Get version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $version = "${{ github.event.inputs.version }}"
+          } else {
+            $version = "${{ github.ref_name }}"
+          }
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Windows Setup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aniways-Windows-Setup
+          path: frontend/out/make/squirrel.windows/x64/*.exe
+          if-no-files-found: warn
+
+      - name: Upload Windows ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aniways-Windows-ZIP
+          path: frontend/out/make/zip/win32/x64/*.zip
+          if-no-files-found: warn
+
+  release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows Setup artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Aniways-Windows-Setup
+          path: ./artifacts/setup
+
+      - name: Download Windows ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Aniways-Windows-ZIP
+          path: ./artifacts/zip
+
+      - name: List artifacts
+        run: |
+          echo "Setup artifacts:"
+          ls -la ./artifacts/setup/ || echo "No setup files"
+          echo "ZIP artifacts:"
+          ls -la ./artifacts/zip/ || echo "No zip files"
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rename artifacts
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+
+          # Rename setup exe if exists
+          if ls ./artifacts/setup/*.exe 1> /dev/null 2>&1; then
+            for f in ./artifacts/setup/*.exe; do
+              mv "$f" "./artifacts/Aniways-${VERSION}-Setup.exe"
+            done
+          fi
+
+          # Rename zip if exists
+          if ls ./artifacts/zip/*.zip 1> /dev/null 2>&1; then
+            for f in ./artifacts/zip/*.zip; do
+              mv "$f" "./artifacts/Aniways-${VERSION}-win32-x64.zip"
+            done
+          fi
+
+          echo "Final artifacts:"
+          ls -la ./artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: Aniways ${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'alpha') }}
+          generate_release_notes: true
+          files: |
+            ./artifacts/Aniways-*.exe
+            ./artifacts/Aniways-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

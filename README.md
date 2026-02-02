@@ -290,7 +290,51 @@ or
 
 The packaged app will be in `frontend/out/make/`.
 
-### Option 4: Manual
+### Option 5: Download Pre-built Windows Executable
+
+Download the latest Windows installer from the [Releases](https://github.com/hazavi/aniways/releases) page:
+
+- **Aniways-vX.X.X-Setup.exe** - Windows installer (recommended)
+- **Aniways-vX.X.X-win32-x64.zip** - Portable ZIP version
+
+---
+
+## Building Windows Executable
+
+To build the Windows `.exe` installer locally:
+
+### Quick Build
+
+```bash
+build-windows-exe.bat
+```
+
+### Manual Build
+
+```bash
+cd frontend
+npm ci
+npm run build
+npx electron-forge make --platform win32 --arch x64
+```
+
+The output will be in:
+
+- `frontend/out/make/squirrel.windows/x64/` - Windows installer (.exe)
+- `frontend/out/make/zip/win32/x64/` - Portable ZIP
+
+### Automated Releases
+
+Releases are automatically built via GitHub Actions when you push a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will trigger the build workflow and create a GitHub release with the Windows executable attached.
+
+### Option 6: Manual
 
 1. Start backend:
 

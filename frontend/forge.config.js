@@ -5,7 +5,7 @@ module.exports = {
   packagerConfig: {
     name: "Aniways",
     executableName: "aniways",
-    icon: "./public/icon.ico",
+    icon: "./public/Icon",
     asar: true,
     ignore: [
       /^\/node_modules\/(?!(.next|next))/,
@@ -23,8 +23,8 @@ module.exports = {
       name: "@electron-forge/maker-squirrel",
       config: {
         name: "Aniways",
-        setupIcon: "./public/icon.ico",
-        iconUrl: "https://raw.githubusercontent.com/your-repo/aniways/main/frontend/public/icon.ico",
+        setupIcon: "./public/Icon.ico",
+        iconUrl: "https://raw.githubusercontent.com/your-repo/aniways/main/frontend/public/Icon.ico",
       },
     },
     {
@@ -37,7 +37,7 @@ module.exports = {
         options: {
           name: "aniways",
           productName: "Aniways",
-          icon: "./public/icon.ico",
+          icon: "./public/Icon.ico",
         },
       },
     },
@@ -47,7 +47,7 @@ module.exports = {
         options: {
           name: "aniways",
           productName: "Aniways",
-          icon: "./public/icon.ico",
+          icon: "./public/Icon.ico",
         },
       },
     },
