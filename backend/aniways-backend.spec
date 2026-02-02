@@ -1,0 +1,102 @@
+# -*- mode: python ; coding: utf-8 -*-
+"""
+PyInstaller spec file for Aniways Backend
+"""
+
+import sys
+from pathlib import Path
+
+block_cipher = None
+
+# Get the backend directory
+backend_dir = Path(SPECPATH)
+
+a = Analysis(
+    ['server.py'],
+    pathex=[str(backend_dir)],
+    binaries=[],
+    datas=[
+        ('app', 'app'),
+    ],
+    hiddenimports=[
+        'uvicorn.logging',
+        'uvicorn.loops',
+        'uvicorn.loops.auto',
+        'uvicorn.protocols',
+        'uvicorn.protocols.http',
+        'uvicorn.protocols.http.auto',
+        'uvicorn.protocols.websockets',
+        'uvicorn.protocols.websockets.auto',
+        'uvicorn.lifespan',
+        'uvicorn.lifespan.on',
+        'uvicorn.lifespan.off',
+        'httptools',
+        'dotenv',
+        'email_validator',
+        'httpx',
+        'httpx._transports',
+        'httpx._transports.default',
+        'anyio',
+        'anyio._backends',
+        'anyio._backends._asyncio',
+        'sniffio',
+        'h11',
+        'h2',
+        'hpack',
+        'hyperframe',
+        'certifi',
+        'idna',
+        'charset_normalizer',
+        'bs4',
+        'lxml',
+        'lxml.etree',
+        'lxml._elementpath',
+        'sqlalchemy',
+        'sqlalchemy.dialects.sqlite',
+        'sqlalchemy.sql.default_comparator',
+        'jose',
+        'jose.jwt',
+        'jose.jws',
+        'jose.constants',
+        'jose.exceptions',
+        'cryptography',
+        'bcrypt',
+        'pydantic',
+        'pydantic_core',
+        'curl_cffi',
+        'curl_cffi.requests',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='aniways-backend',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,  # Show console for debugging, set to False for production
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=None,
+)

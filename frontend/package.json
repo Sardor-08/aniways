@@ -79,6 +79,11 @@
         "from": "public",
         "to": "public",
         "filter": ["**/*"]
+      },
+      {
+        "from": "backend-dist",
+        "to": "backend",
+        "filter": ["**/*"]
       }
     ],
     "win": {

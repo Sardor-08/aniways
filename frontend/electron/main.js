@@ -342,8 +342,70 @@ function startBackendServer() {
       return;
     }
 
-    const backendPath = path.join(__dirname, "../../backend");
+    const fs = require("fs");
     const isWindows = process.platform === "win32";
+
+    // In production, use the bundled backend executable
+    if (!isDev) {
+      const backendExePath = path.join(process.resourcesPath, "backend", "aniways-backend.exe");
+      
+      console.log(`Starting bundled backend from: ${backendExePath}`);
+      
+      if (!fs.existsSync(backendExePath)) {
+        console.error(`Backend executable not found: ${backendExePath}`);
+        resolve();
+        return;
+      }
+
+      backendServer = spawn(backendExePath, [], {
+        env: {
+          ...process.env,
+          HOST: "127.0.0.1",
+          PORT: BACKEND_PORT.toString(),
+        },
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
+      });
+
+      backendServer.stdout.on("data", (data) => {
+        const output = data.toString();
+        console.log(`Backend: ${output}`);
+        if (output.includes("Uvicorn running") || output.includes("Application startup complete")) {
+          resolve();
+        }
+      });
+
+      backendServer.stderr.on("data", (data) => {
+        const output = data.toString();
+        console.log(`Backend: ${output}`);
+        if (output.includes("Uvicorn running") || output.includes("Application startup complete")) {
+          resolve();
+        }
+      });
+
+      backendServer.on("error", (error) => {
+        console.error("Failed to start backend server:", error);
+        resolve();
+      });
+
+      // Wait for backend to be ready
+      setTimeout(() => {
+        const req = http.get(`http://localhost:${BACKEND_PORT}/docs`, (res) => {
+          console.log("Backend server is ready!");
+          resolve();
+        });
+        req.on("error", () => {
+          console.log("Backend not responding yet, continuing anyway...");
+          resolve();
+        });
+        req.end();
+      }, 3000);
+      
+      return;
+    }
+
+    // Development mode - use Python
+    const backendPath = path.join(__dirname, "../../backend");
 
     console.log(`Starting backend server from: ${backendPath}`);
 
@@ -354,7 +416,6 @@ function startBackendServer() {
       : path.join(venvPath, "bin", "python");
 
     // Use venv python if available, otherwise fallback to system python
-    const fs = require("fs");
     let pythonCmd;
     
     if (fs.existsSync(venvPython)) {

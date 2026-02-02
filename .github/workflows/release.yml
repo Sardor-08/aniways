@@ -19,6 +19,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Backend executable
+        working-directory: backend
+        run: |
+          pyinstaller aniways-backend.spec --clean
+          dir dist
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,6 +70,13 @@ jobs:
             Copy-Item -Recurse -Force "public/*" ".next/standalone/public/"
           }
 
+      - name: Copy backend executable to frontend
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "frontend/backend-dist"
+          Copy-Item -Force "backend/dist/aniways-backend.exe" "frontend/backend-dist/"
+          dir frontend/backend-dist
+
       - name: Build Electron app for Windows
         working-directory: frontend
         run: npm run electron:make
@@ -61,7 +88,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Contents of dist:"
-          Get-ChildItem -Recurse dist | ForEach-Object { Write-Host $_.FullName }
+          Get-ChildItem -Recurse dist -Include *.exe | ForEach-Object { Write-Host $_.FullName }
 
       - name: Get version
         id: version
