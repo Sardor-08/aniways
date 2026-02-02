@@ -6,7 +6,9 @@ module.exports = {
     name: "Aniways",
     executableName: "aniways",
     icon: "./public/Icon",
-    asar: true,
+    asar: {
+      unpack: "**/*.node"
+    },
     ignore: [
       /^\/node_modules\/(?!(.next|next))/,
       /^\/\.next\/cache/,
@@ -24,7 +26,11 @@ module.exports = {
       config: {
         name: "Aniways",
         setupIcon: "./public/Icon.ico",
-        iconUrl: "https://raw.githubusercontent.com/your-repo/aniways/main/frontend/public/Icon.ico",
+        authors: "Aniways",
+        description: "Anime Streaming Desktop App",
+        // Creates desktop and start menu shortcuts
+        setupExe: "Aniways-Setup.exe",
+        noMsi: true,
       },
     },
     {

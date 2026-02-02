@@ -175,12 +175,17 @@ function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
 
+  // Icon path differs between dev and production
+  const iconPath = isDev 
+    ? path.join(__dirname, "../public/Icon.ico")
+    : path.join(process.resourcesPath, "public", "Icon.ico");
+
   mainWindow = new BrowserWindow({
     width: width,
     height: height,
     minWidth: 800,
     minHeight: 600,
-    icon: path.join(__dirname, "../public/icon.ico"),
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -257,41 +262,63 @@ function startNextServer() {
   }
 
   return new Promise((resolve, reject) => {
-    const serverPath = path.join(__dirname, "../.next/standalone/server.js");
+    // In production, standalone is in resources folder (extraResource)
+    const resourcesPath = process.resourcesPath;
+    const serverPath = path.join(resourcesPath, "standalone", "server.js");
+    const standaloneCwd = path.join(resourcesPath, "standalone");
     
-    // Use process.execPath to get the full path to node executable
-    const nodePath = process.execPath;
+    // In packaged Electron app, we need to use the bundled Node.js
+    // Electron comes with Node.js, we can use require to run the server
+    const fs = require("fs");
+    
+    console.log(`Starting Next.js server from: ${serverPath}`);
+    console.log(`Working directory: ${standaloneCwd}`);
+    
+    // Check if server file exists
+    if (!fs.existsSync(serverPath)) {
+      console.error(`Server file not found: ${serverPath}`);
+      console.log("Available in resources:", fs.readdirSync(resourcesPath));
+      reject(new Error("Server file not found"));
+      return;
+    }
 
-    console.log(`Starting Next.js server: ${nodePath} ${serverPath}`);
-
-    nextServer = spawn(nodePath, [serverPath], {
-      env: {
-        ...process.env,
-        PORT: PORT.toString(),
-        HOSTNAME: "localhost",
-      },
-      cwd: path.join(__dirname, "../.next/standalone"),
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    nextServer.stdout.on("data", (data) => {
-      console.log(`Next.js: ${data}`);
-      if (data.toString().includes("Ready") || data.toString().includes("started")) {
-        resolve();
-      }
-    });
-
-    nextServer.stderr.on("data", (data) => {
-      console.error(`Next.js Error: ${data}`);
-    });
-
-    nextServer.on("error", (error) => {
-      console.error("Failed to start Next.js server:", error);
+    // Set environment variables
+    process.env.PORT = PORT.toString();
+    process.env.HOSTNAME = "localhost";
+    process.env.NODE_ENV = "production";
+    
+    // Change working directory
+    const originalCwd = process.cwd();
+    process.chdir(standaloneCwd);
+    
+    try {
+      // Require and run the Next.js server
+      require(serverPath);
+      console.log("Next.js server started via require");
+      
+      // Wait for server to be ready
+      const checkServer = (attempts = 0) => {
+        const req = http.get(`http://localhost:${PORT}`, (res) => {
+          console.log("Next.js server is responding!");
+          resolve();
+        });
+        req.on("error", () => {
+          if (attempts < 30) {
+            setTimeout(() => checkServer(attempts + 1), 500);
+          } else {
+            console.log("Server check timed out, proceeding anyway");
+            resolve();
+          }
+        });
+        req.end();
+      };
+      
+      setTimeout(() => checkServer(), 1000);
+    } catch (error) {
+      console.error("Error starting Next.js server:", error);
+      process.chdir(originalCwd);
       reject(error);
-    });
-
-    // Resolve after a timeout if no "Ready" message
-    setTimeout(resolve, 5000);
+    }
   });
 }
 
