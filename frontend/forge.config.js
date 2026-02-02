@@ -15,7 +15,7 @@ module.exports = {
       /^\/\.env/,
       /\.map$/,
     ],
-    extraResource: ["../.next/standalone", "../public"],
+    extraResource: ["./.next/standalone", "./public"],
   },
   rebuildConfig: {},
   makers: [
