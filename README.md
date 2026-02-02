@@ -20,7 +20,6 @@ https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
 
 ## Quick Install Tutorial
 
-https://github.com/user-attachments/assets/ae9f9dbe-a35e-498e-9b8c-84aa6f5dbaae
 
 
 </div>
