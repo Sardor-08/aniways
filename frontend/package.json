@@ -6,6 +6,10 @@
   "main": "electron/main.js",
   "author": "Aniways",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hazavi/aniways.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
