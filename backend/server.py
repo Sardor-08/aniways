@@ -14,16 +14,32 @@ Environment Variables:
     DEBUG   - Enable debug mode (default: false)
 """
 
+import sys
 from app.main import app
 from app.core.config import settings
 
+# Check if running as frozen executable (PyInstaller)
+def is_frozen():
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(
-        "server:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level="debug" if settings.DEBUG else "info",
-    )
+    
+    if is_frozen():
+        # When frozen, pass the app object directly (no reload)
+        uvicorn.run(
+            app,
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=False,  # Cannot reload in frozen app
+            log_level="info",
+        )
+    else:
+        # Development mode - string reference allows reload
+        uvicorn.run(
+            "server:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=settings.DEBUG,
+            log_level="debug" if settings.DEBUG else "info",
+        )

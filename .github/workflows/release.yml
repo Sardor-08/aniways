@@ -46,7 +46,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
@@ -70,21 +70,25 @@ jobs:
             Copy-Item -Recurse -Force "public/*" ".next/standalone/public/"
           }
 
-      - name: Copy backend executable to frontend
+      - name: Copy backend executable to desktop folder
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "frontend/backend-dist"
-          Copy-Item -Force "backend/dist/aniways-backend.exe" "frontend/backend-dist/"
-          dir frontend/backend-dist
+          New-Item -ItemType Directory -Force -Path "desktop/backend-dist"
+          Copy-Item -Force "backend/dist/aniways-backend.exe" "desktop/backend-dist/"
+          dir desktop/backend-dist
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm install
 
       - name: Build Electron app for Windows
-        working-directory: frontend
-        run: npm run electron:make
+        working-directory: desktop
+        run: npm run build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List output files
-        working-directory: frontend
+        working-directory: desktop
         shell: pwsh
         run: |
           Write-Host "Contents of dist:"
@@ -105,7 +109,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Aniways-Windows-Setup
-          path: frontend/dist/*.exe
+          path: desktop/dist/*.exe
           if-no-files-found: error
 
   release:

@@ -1,10 +1,10 @@
 const { app, BrowserWindow, shell, Menu } = require("electron");
 const path = require("path");
-const { spawn, exec } = require("child_process");
+const { spawn } = require("child_process");
 const http = require("http");
+const fs = require("fs");
 
 let mainWindow;
-let nextServer;
 let backendServer;
 
 // Detect if running in development mode
@@ -161,14 +161,13 @@ function createMenu() {
 }
 
 function createWindow() {
-  // Get primary display dimensions for maximized window
   const { screen } = require("electron");
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
 
   // Icon path differs between dev and production
   const iconPath = isDev 
-    ? path.join(__dirname, "../public/Icon.ico")
+    ? path.join(__dirname, "../frontend/public/Icon.ico")
     : path.join(process.resourcesPath, "public", "Icon.ico");
 
   mainWindow = new BrowserWindow({
@@ -181,32 +180,27 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
-      // Performance optimizations
       backgroundThrottling: false,
       enableWebSQL: false,
     },
     titleBarStyle: "default",
-    autoHideMenuBar: false, // Show menu bar for fullscreen access
+    autoHideMenuBar: false,
     show: false,
-    backgroundColor: "#09090b", // Dark background to prevent white flash
+    backgroundColor: "#09090b",
   });
 
-  // Set up keyboard shortcut for fullscreen (F11)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'F11' && input.type === 'keyDown') {
       mainWindow.setFullScreen(!mainWindow.isFullScreen());
     }
   });
 
-  // Maximize window on start
   mainWindow.maximize();
 
-  // Show window when ready to prevent visual flash
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
   });
 
-  // Open external links in browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http") && !url.includes("localhost")) {
       shell.openExternal(url);
@@ -217,9 +211,8 @@ function createWindow() {
 
   const startUrl = `http://localhost:${PORT}`;
 
-  // Wait for Next.js server to be ready before loading
   const waitForServer = (retries = 0) => {
-    const maxRetries = 60; // 30 seconds max
+    const maxRetries = 60;
     
     const req = http.get(`http://localhost:${PORT}`, (res) => {
       console.log("Next.js server is ready!");
@@ -231,7 +224,7 @@ function createWindow() {
         setTimeout(() => waitForServer(retries + 1), 500);
       } else {
         console.error("Timeout waiting for Next.js server");
-        mainWindow.loadURL(startUrl); // Try anyway
+        mainWindow.loadURL(startUrl);
       }
     });
     
@@ -246,48 +239,36 @@ function createWindow() {
 }
 
 function startNextServer() {
-  // In development mode, Next.js is started by concurrently, so skip this
   if (isDev) {
-    console.log("Development mode: Next.js dev server should be running via npm run dev");
+    console.log("Development mode: Next.js dev server should be running separately");
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
-    // In production, standalone is in resources folder (extraResource)
     const resourcesPath = process.resourcesPath;
     const serverPath = path.join(resourcesPath, "standalone", "server.js");
     const standaloneCwd = path.join(resourcesPath, "standalone");
     
-    // In packaged Electron app, we need to use the bundled Node.js
-    // Electron comes with Node.js, we can use require to run the server
-    const fs = require("fs");
-    
     console.log(`Starting Next.js server from: ${serverPath}`);
     console.log(`Working directory: ${standaloneCwd}`);
     
-    // Check if server file exists
     if (!fs.existsSync(serverPath)) {
       console.error(`Server file not found: ${serverPath}`);
-      console.log("Available in resources:", fs.readdirSync(resourcesPath));
       reject(new Error("Server file not found"));
       return;
     }
 
-    // Set environment variables
     process.env.PORT = PORT.toString();
     process.env.HOSTNAME = "localhost";
     process.env.NODE_ENV = "production";
     
-    // Change working directory
     const originalCwd = process.cwd();
     process.chdir(standaloneCwd);
     
     try {
-      // Require and run the Next.js server
       require(serverPath);
       console.log("Next.js server started via require");
       
-      // Wait for server to be ready
       const checkServer = (attempts = 0) => {
         const req = http.get(`http://localhost:${PORT}`, (res) => {
           console.log("Next.js server is responding!");
@@ -316,13 +297,13 @@ function startNextServer() {
 function checkPortInUse(port) {
   return new Promise((resolve) => {
     const req = http.get(`http://localhost:${port}`, (res) => {
-      resolve(true); // Port is in use (server responding)
+      resolve(true);
     });
     req.on("error", (err) => {
       if (err.code === "ECONNREFUSED") {
-        resolve(false); // Port is free
+        resolve(false);
       } else {
-        resolve(true); // Assume in use for other errors
+        resolve(true);
       }
     });
     req.setTimeout(1000, () => {
@@ -334,7 +315,6 @@ function checkPortInUse(port) {
 
 function startBackendServer() {
   return new Promise(async (resolve) => {
-    // First check if backend is already running
     const backendRunning = await checkPortInUse(BACKEND_PORT);
     if (backendRunning) {
       console.log(`Backend already running on port ${BACKEND_PORT}`);
@@ -342,7 +322,6 @@ function startBackendServer() {
       return;
     }
 
-    const fs = require("fs");
     const isWindows = process.platform === "win32";
 
     // In production, use the bundled backend executable
@@ -388,7 +367,6 @@ function startBackendServer() {
         resolve();
       });
 
-      // Wait for backend to be ready
       setTimeout(() => {
         const req = http.get(`http://localhost:${BACKEND_PORT}/docs`, (res) => {
           console.log("Backend server is ready!");
@@ -405,17 +383,15 @@ function startBackendServer() {
     }
 
     // Development mode - use Python
-    const backendPath = path.join(__dirname, "../../backend");
+    const backendPath = path.join(__dirname, "../backend");
 
     console.log(`Starting backend server from: ${backendPath}`);
 
-    // Check if virtual environment exists
-    const venvPath = path.join(__dirname, "../../.venv");
+    const venvPath = path.join(__dirname, "../.venv");
     const venvPython = isWindows 
       ? path.join(venvPath, "Scripts", "python.exe")
       : path.join(venvPath, "bin", "python");
 
-    // Use venv python if available, otherwise fallback to system python
     let pythonCmd;
     
     if (fs.existsSync(venvPython)) {
@@ -458,18 +434,10 @@ function startBackendServer() {
 
     backendServer.on("error", (error) => {
       console.error("Failed to start backend server:", error);
-      resolve(); // Don't block - user can start backend manually
+      resolve();
     });
 
-    backendServer.on("exit", (code) => {
-      if (code !== 0 && code !== null) {
-        console.error(`Backend server exited with code ${code}`);
-      }
-    });
-
-    // Resolve after timeout (backend might already be running)
     setTimeout(() => {
-      // Check if backend is responding
       const req = http.get(`http://localhost:${BACKEND_PORT}/docs`, (res) => {
         console.log("Backend server is ready!");
         resolve();
@@ -486,16 +454,6 @@ function startBackendServer() {
 function cleanup() {
   console.log("Cleaning up...");
   
-  if (nextServer && !nextServer.killed) {
-    console.log("Stopping Next.js server...");
-    if (process.platform === "win32") {
-      spawn("taskkill", ["/pid", nextServer.pid, "/f", "/t"], { shell: true });
-    } else {
-      nextServer.kill("SIGTERM");
-    }
-    nextServer = null;
-  }
-  
   if (backendServer && !backendServer.killed) {
     console.log("Stopping backend server...");
     if (process.platform === "win32") {
@@ -510,17 +468,15 @@ function cleanup() {
 app.whenReady().then(async () => {
   console.log("App is ready, starting servers...");
   
-  // Create menu first
   createMenu();
   
   try {
-    // Start backend first, then Next.js
     await startBackendServer();
     await startNextServer();
     createWindow();
   } catch (error) {
     console.error("Error starting application:", error);
-    createWindow(); // Try to create window anyway
+    createWindow();
   }
 });
 
@@ -541,7 +497,6 @@ app.on("before-quit", () => {
   cleanup();
 });
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
   cleanup();

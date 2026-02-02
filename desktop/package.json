@@ -1,0 +1,74 @@
+{
+  "name": "aniways-desktop",
+  "version": "1.5.1",
+  "description": "Aniways - Anime Streaming Desktop App",
+  "main": "main.js",
+  "author": "Aniways",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hazavi/aniways.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"cd ../frontend && npm run dev\" \"cd ../backend && python server.py\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "electron-builder --win --x64",
+    "package": "electron-builder --dir"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.aniways.app",
+    "productName": "Aniways",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/.next/standalone",
+        "to": "standalone",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../frontend/public",
+        "to": "public",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "backend-dist",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "../frontend/public/Icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "../frontend/public/Icon.ico",
+      "uninstallerIcon": "../frontend/public/Icon.ico",
+      "installerHeaderIcon": "../frontend/public/Icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aniways"
+    }
+  }
+}
