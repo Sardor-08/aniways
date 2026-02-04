@@ -18,7 +18,12 @@ A modern anime streaming application built with Next.js, FastAPI and Electron.
 
 https://github.com/user-attachments/assets/0339b4af-6562-42b0-bab2-4c583a4c93f0
 
-## Quick Install Tutorial
+## Quick App Install Tutorial + Preview
+
+
+https://github.com/user-attachments/assets/9fa3420c-d2b3-4b13-a882-24660d32b33d
+
+
 
 </div>
 
