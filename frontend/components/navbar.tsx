@@ -121,8 +121,8 @@ export function Navbar() {
   }, []);
 
   return (
-    <>
-      <header className="relative top-5 z-50 mx-4 md:mx-auto max-w-6xl border rounded-full px-4 md:px-6 border-border/50 shadow-sm">
+    <div className="pt-5 pb-8">
+      <header className="sticky top-5 z-50 mx-4 md:mx-auto max-w-6xl border rounded-full px-4 md:px-6 border-border/50 shadow-sm bg-background/80 backdrop-blur-sm">
         <div className="flex h-14 items-center justify-between gap-2 md:gap-4">
           {/* Mobile Menu Button */}
           <button
@@ -467,6 +467,6 @@ export function Navbar() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

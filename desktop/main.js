@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu } = require("electron");
+const { app, BrowserWindow, shell, Menu, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const http = require("http");
@@ -183,8 +183,9 @@ function createWindow() {
       backgroundThrottling: false,
       enableWebSQL: false,
     },
-    titleBarStyle: "default",
-    autoHideMenuBar: false,
+    frame: false,
+    titleBarStyle: "hidden",
+    autoHideMenuBar: true,
     show: false,
     backgroundColor: "#09090b",
   });
@@ -193,6 +194,15 @@ function createWindow() {
     if (input.key === 'F11' && input.type === 'keyDown') {
       mainWindow.setFullScreen(!mainWindow.isFullScreen());
     }
+  });
+
+  // Track maximize state
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('maximize-change', true);
+  });
+  
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('maximize-change', false);
   });
 
   mainWindow.maximize();
@@ -470,15 +480,88 @@ app.whenReady().then(async () => {
   
   createMenu();
   
+  // Navigation IPC handlers
+  ipcMain.on("nav-back", () => {
+    if (mainWindow && mainWindow.webContents.canGoBack()) {
+      mainWindow.webContents.goBack();
+    }
+  });
+  
+  ipcMain.on("nav-forward", () => {
+    if (mainWindow && mainWindow.webContents.canGoForward()) {
+      mainWindow.webContents.goForward();
+    }
+  });
+  
+  ipcMain.on("nav-home", () => {
+    if (mainWindow) {
+      mainWindow.loadURL(`http://localhost:${PORT}`);
+    }
+  });
+  
+  ipcMain.on("nav-reload", () => {
+    if (mainWindow) {
+      mainWindow.webContents.reload();
+    }
+  });
+  
+  ipcMain.on("nav-force-reload", () => {
+    if (mainWindow) {
+      mainWindow.webContents.reloadIgnoringCache();
+    }
+  });
+  
+  // Window control handlers
+  ipcMain.on("window-minimize", () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+  
+  ipcMain.on("window-maximize", () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+  
+  ipcMain.on("window-close", () => {
+    if (mainWindow) mainWindow.close();
+  });
+  
+  ipcMain.handle("get-app-version", () => {
+    return app.getVersion();
+  });
+  
   try {
     await startBackendServer();
     await startNextServer();
     createWindow();
+    
+    // Send navigation state updates when navigation changes
+    if (mainWindow) {
+      mainWindow.webContents.on("did-navigate", () => {
+        sendNavigationState();
+      });
+      mainWindow.webContents.on("did-navigate-in-page", () => {
+        sendNavigationState();
+      });
+    }
   } catch (error) {
     console.error("Error starting application:", error);
     createWindow();
   }
 });
+
+function sendNavigationState() {
+  if (mainWindow) {
+    mainWindow.webContents.send("navigation-state", {
+      canGoBack: mainWindow.webContents.canGoBack(),
+      canGoForward: mainWindow.webContents.canGoForward(),
+    });
+  }
+}
 
 app.on("window-all-closed", () => {
   cleanup();

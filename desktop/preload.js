@@ -11,6 +11,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
   maximize: () => ipcRenderer.send("window-maximize"),
   close: () => ipcRenderer.send("window-close"),
   
+  // Navigation controls
+  goBack: () => ipcRenderer.send("nav-back"),
+  goForward: () => ipcRenderer.send("nav-forward"),
+  goHome: () => ipcRenderer.send("nav-home"),
+  reload: () => ipcRenderer.send("nav-reload"),
+  forceReload: () => ipcRenderer.send("nav-force-reload"),
+  
+  // Navigation state
+  onNavigationState: (callback) => {
+    ipcRenderer.on("navigation-state", (event, state) => callback(state));
+  },
+  
+  // Maximize state
+  onMaximizeChange: (callback) => {
+    ipcRenderer.on("maximize-change", (event, isMaximized) => callback(isMaximized));
+  },
+  
   // App info
   getVersion: () => ipcRenderer.invoke("get-app-version"),
   

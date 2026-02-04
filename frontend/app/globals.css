@@ -180,3 +180,18 @@
   scrollbar-width: thin;
   scrollbar-color: var(--muted-foreground) transparent;
 }
+
+/* Electron app - add padding for title bar */
+html.electron .electron-app {
+  padding-top: 36px; /* h-9 = 36px */
+}
+
+/* In browser (non-electron), remove the container structure */
+html:not(.electron) .electron-app {
+  height: auto;
+  padding-top: 0;
+}
+
+html:not(.electron) body {
+  overflow: auto;
+}
