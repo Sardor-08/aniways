@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 - Animepahe domain changed from "https://animepahe.si/" to "https://animepahe.pw/"
 - Updated packages to version: 1.6.1
 
+### Fixed
+
+- **Poster images loads**: Allow images to load from external CDN domains by removing restrictive CSP headers
+
 ## [v1.6.0] - 2026-02-4
 
 ### Added

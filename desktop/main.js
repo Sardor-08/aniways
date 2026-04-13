@@ -161,9 +161,18 @@ function createMenu() {
 }
 
 function createWindow() {
-  const { screen } = require("electron");
+  const { screen, session } = require("electron");
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
+
+  // Allow images to load from external CDN domains by removing restrictive CSP headers
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const headers = { ...details.responseHeaders };
+    // Remove any Content-Security-Policy that could block external images
+    delete headers["content-security-policy"];
+    delete headers["Content-Security-Policy"];
+    callback({ responseHeaders: headers });
+  });
 
   // Icon path differs between dev and production
   const iconPath = isDev 
