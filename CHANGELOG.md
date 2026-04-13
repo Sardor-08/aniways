@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.5.1] - 2026-02-2
+## [v1.6.1] - 2026-04-13
+
+### Changed
+- Animepahe domain changed from "https://animepahe.si/" to "https://animepahe.pw/"
+- Updated packages to version: 1.6.1
+
+## [v1.6.0] - 2026-02-4
 
 ### Added
 

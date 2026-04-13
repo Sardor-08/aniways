@@ -64,7 +64,7 @@ Configuration is managed via environment variables with sensible defaults:
 | `PORT`               | `8000`                     | Server bind port                           |
 | `API_TITLE`          | `Aniways API`              | API title in docs                          |
 | `JIKAN_BASE_URL`     | `https://api.jikan.moe/v4` | Jikan API base URL                         |
-| `ANIMEPAHE_BASE_URL` | `https://animepahe.si`     | Animepahe base URL                         |
+| `ANIMEPAHE_BASE_URL` | `https://animepahe.pw`     | Animepahe base URL                         |
 | `CACHE_TTL_LIST`     | `300`                      | Cache TTL for list endpoints (seconds)     |
 | `CACHE_TTL_DETAIL`   | `3600`                     | Cache TTL for detail endpoints (seconds)   |
 | `JIKAN_RATE_LIMIT`   | `0.35`                     | Min delay between Jikan requests (seconds) |

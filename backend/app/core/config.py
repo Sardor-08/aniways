@@ -31,7 +31,7 @@ class Settings:
 
     # External URLs
     JIKAN_BASE_URL: str = "https://api.jikan.moe/v4"
-    ANIMEPAHE_BASE_URL: str = "https://animepahe.si"
+    ANIMEPAHE_BASE_URL: str = "https://animepahe.pw"
 
     # Rate Limiting & Retries
     JIKAN_RATE_LIMIT_DELAY: float = 0.4
