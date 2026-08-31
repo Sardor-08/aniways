@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const token = localStorage.getItem("aniways-token");
+      const token = localStorage.getItem("anilo-token");
       if (!token) {
         setUser(null);
         return;
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await authApi.getMe();
       setUser(userData);
     } catch {
-      localStorage.removeItem("aniways-token");
+      localStorage.removeItem("anilo-token");
       setUser(null);
     }
   }, []);
@@ -50,18 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     const response = await authApi.login(username, password);
-    localStorage.setItem("aniways-token", response.access_token);
+    localStorage.setItem("anilo-token", response.access_token);
     setUser(response.user);
   };
 
   const signup = async (username: string, password: string) => {
     const response = await authApi.signup(username, password);
-    localStorage.setItem("aniways-token", response.access_token);
+    localStorage.setItem("anilo-token", response.access_token);
     setUser(response.user);
   };
 
   const logout = () => {
-    localStorage.removeItem("aniways-token");
+    localStorage.removeItem("anilo-token");
     setUser(null);
   };
 

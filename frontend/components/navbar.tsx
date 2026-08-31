@@ -136,8 +136,9 @@ export function Navbar() {
             )}
           </button>
 
-          <Link href="/" className="text-xl font-black shrink-0 text-logo">
-            Aniways
+          <Link href="/" className="flex items-center gap-2 text-xl font-black shrink-0 text-logo" aria-label="Anilo.uz bosh sahifasi">
+            <img src="/anilo-logo.jpg" alt="Anilo.uz" className="size-8 rounded-full object-cover" />
+            <span>Anilo.uz</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             <Link

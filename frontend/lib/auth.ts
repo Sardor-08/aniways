@@ -26,7 +26,7 @@ export const authApi = {
     const res = await fetch(`${API_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email: username, password }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -39,7 +39,7 @@ export const authApi = {
     const res = await fetch(`${API_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email: username, password }),
     });
     if (!res.ok) {
       const error = await res.json();

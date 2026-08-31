@@ -1,9 +1,9 @@
 {
-  "name": "aniways-frontend",
+  "name": "anilo-frontend",
   "version": "1.6.1",
   "private": true,
-  "description": "Aniways - Anime Streaming Web App",
-  "author": "Aniways",
+  "description": "Anilo.uz - Anime Streaming Web App",
+  "author": "Anilo.uz",
   "license": "MIT",
   "repository": {
     "type": "git",

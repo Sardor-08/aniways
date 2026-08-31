@@ -20,10 +20,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Aniways - Anime Streaming",
+    default: "Anilo.uz — Anime Streaming",
     template: "%s",
   },
-  description: "Stream your favorite anime series and movies for free.",
+  description: "Anilo.uz — sevimli anime seriallaringiz va filmlaringizni tomosha qiling.",
 };
 
 export default function RootLayout({
@@ -60,10 +60,10 @@ export default function RootLayout({
                     <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
                       <div className="flex justify-center mt-2">
                         <span className="text-xl text-logo font-black m-2">
-                          Aniways
+                          Anilo.uz
                         </span>
                       </div>
-                      <p>Copyright ©Aniways. All Rights Reserved</p>
+                      <p>Copyright ©Anilo.uz. All Rights Reserved</p>
                       <p className="mt-1">
                         This site does not store any files on its server. All
                         contents are provided by non-affiliated third parties.
