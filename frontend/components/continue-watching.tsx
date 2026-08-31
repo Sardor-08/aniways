@@ -93,12 +93,7 @@ export function ContinueWatching() {
     );
   };
 
-  const getTitle = (item: WatchHistoryItem) => {
-    if (language === "en" && item.animeTitleEnglish) {
-      return item.animeTitleEnglish;
-    }
-    return item.animeTitle;
-  };
+  const getTitle = (item: WatchHistoryItem) => item.animeTitleEnglish || item.animeTitle;
 
   if (!isVisible || history.length === 0) {
     return null;
