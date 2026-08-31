@@ -7,12 +7,12 @@ from ..database.models import ListStatus
 
 # User Schemas
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(..., min_length=5, max_length=100)
     password: str = Field(..., min_length=6)
 
 
 class UserLogin(BaseModel):
-    username: str  # Can be username or email
+    email: str
     password: str
 
 

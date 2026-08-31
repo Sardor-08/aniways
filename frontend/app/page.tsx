@@ -16,7 +16,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Home - Aniways";
+    document.title = "Bosh sahifa - Anilo.uz";
   }, []);
 
   useEffect(() => {

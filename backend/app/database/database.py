@@ -4,34 +4,32 @@ from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
 import os
 
-# Database file - use /app/data in Docker (volume mount) or backend folder locally
-DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-os.makedirs(DATA_DIR, exist_ok=True)
-DATABASE_PATH = os.path.join(DATA_DIR, "aniways.db")
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+# Neon provides a PostgreSQL DATABASE_URL in deployed environments.
+# Keep SQLite only as an explicit local fallback for offline development.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    os.makedirs(DATA_DIR, exist_ok=True)
+    DATABASE_PATH = os.path.join(DATA_DIR, "anilo.db")
+    DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False},  # Required for SQLite
-    pool_pre_ping=True,  # Verify connections before use
-    echo=False,  # Set to True for SQL debugging
-)
+engine_kwargs = {"pool_pre_ping": True, "echo": False}
+if DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
 
-# Enable SQLite optimizations
-@event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    # Enable foreign key constraints
-    cursor.execute("PRAGMA foreign_keys=ON")
-    # Use WAL mode for better concurrent read performance
-    cursor.execute("PRAGMA journal_mode=WAL")
-    # Sync less often for better write performance (still safe with WAL)
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    # Increase cache size (negative = KB, positive = pages)
-    cursor.execute("PRAGMA cache_size=-64000")  # 64MB cache
-    # Store temp tables in memory
-    cursor.execute("PRAGMA temp_store=MEMORY")
-    cursor.close()
+engine = create_engine(DATABASE_URL, **engine_kwargs)
+
+# SQLite-only optimizations. PostgreSQL handles these concerns itself.
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=-64000")
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

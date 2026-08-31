@@ -25,9 +25,9 @@ class Settings:
     PORT: int = field(default_factory=lambda: _env_int("PORT", 4444))
 
     # API Info
-    API_TITLE: str = "Aniways API"
+    API_TITLE: str = "Anilo.uz API"
     API_VERSION: str = "2.0.0"
-    API_DESCRIPTION: str = "Anime streaming API - Jikan (MAL) + Animepahe"
+    API_DESCRIPTION: str = "Anilo.uz anime streaming API - Jikan (MAL) + Animepahe"
 
     # External URLs
     JIKAN_BASE_URL: str = "https://api.jikan.moe/v4"

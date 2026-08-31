@@ -130,7 +130,7 @@ export function TitleBar() {
 
       {/* Center - Title (draggable area) */}
       <div className="flex-1 text-center text-sm text-muted-foreground font-medium truncate px-4">
-        Aniways
+        Anilo.uz
       </div>
 
       {/* Right side - Window controls */}

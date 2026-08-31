@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import datetime
 
 from ..database import get_db, User
 from ..auth import (
@@ -62,18 +63,21 @@ def get_required_user(
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     """Create a new user account"""
-    # Check if username already exists
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
+            detail="Unable to create account"
         )
-    
-    # Create new user
+
+    username = user_data.email.split("@", 1)[0][:50]
+    if db.query(User).filter(User.username == username).first():
+        username = f"{username}_{int(datetime.utcnow().timestamp())}"[:50]
+
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
-        username=user_data.username,
+        username=username,
+        email=user_data.email,
         hashed_password=hashed_password
     )
     
@@ -95,10 +99,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=AuthResponse)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """Login with username/email and password"""
-    # Find user by username or email
-    user = db.query(User).filter(
-        (User.username == login_data.username) | (User.email == login_data.username)
-    ).first()
+    user = db.query(User).filter(User.email == login_data.email).first()
     
     if not user:
         raise HTTPException(
