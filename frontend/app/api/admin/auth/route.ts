@@ -1,14 +1,28 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { query } from "@/lib/db";
 
 const COOKIE = "anilo_admin_session";
 const SESSION_VALUE = "authenticated";
 
-function validCredentials(username: string, password: string) {
-  const normalized = username.trim().toLowerCase();
-  const allowedUsernames = [process.env.ADMIN_USERNAME, process.env.ADMIN_EMAIL]
-    .filter((value): value is string => Boolean(value))
-    .map((value) => value.trim().toLowerCase());
-  return allowedUsernames.includes(normalized) && password === process.env.ADMIN_PASSWORD;
+async function ensureAdmin() {
+  const username = process.env.ADMIN_USERNAME?.trim();
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !email || !password) return null;
+
+  const existing = await query<{ id: string; username: string; email: string; password_hash: string }>(
+    `SELECT id, username, email, password_hash FROM anilo.users WHERE is_admin = TRUE OR email = $1 OR username = $2 LIMIT 1`,
+    [email, username],
+  );
+  if (existing.rows[0]) return existing.rows[0];
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const created = await query<{ id: string; username: string; email: string; password_hash: string }>(
+    `INSERT INTO anilo.users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, TRUE) RETURNING id, username, email, password_hash`,
+    [username, email, passwordHash],
+  );
+  return created.rows[0] ?? null;
 }
 
 export async function POST(request: Request) {
@@ -16,8 +30,17 @@ export async function POST(request: Request) {
   const username = typeof body?.username === "string" ? body.username.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!process.env.ADMIN_PASSWORD || !validCredentials(username, password)) {
-    return NextResponse.json({ error: "Login yoki parol noto‘g‘ri" }, { status: 401 });
+  try {
+    const admin = await ensureAdmin();
+    const credentialsMatch = admin
+      ? (username.trim().toLowerCase() === admin.username.trim().toLowerCase() || username.trim().toLowerCase() === admin.email.trim().toLowerCase()) && await bcrypt.compare(password, admin.password_hash)
+      : false;
+    if (!credentialsMatch) {
+      return NextResponse.json({ error: "Login yoki parol noto‘g‘ri" }, { status: 401 });
+    }
+  } catch (error) {
+    console.error("[v0] Admin Neon login failed", error);
+    return NextResponse.json({ error: "Server xatosi. Keyinroq urinib ko‘ring." }, { status: 500 });
   }
 
   const response = NextResponse.json({ ok: true });
