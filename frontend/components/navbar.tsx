@@ -51,7 +51,6 @@ export function Navbar() {
   const [isSearching, setIsSearching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const { language, setLanguage } = useLanguage();
   const { getTitle } = useLanguage();
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -281,29 +280,6 @@ export function Navbar() {
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Language Toggle - Hidden on mobile */}
-            <div className="hidden sm:flex items-center rounded-full bg-muted p-1">
-              <button
-                onClick={() => setLanguage("en")}
-                className={`hover:cursor-pointer px-3 py-1 text-sm font-medium rounded-full transition-colors ${
-                  language === "en"
-                    ? "bg-purple-500 text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                en
-              </button>
-              <button
-                onClick={() => setLanguage("jp")}
-                className={`hover:cursor-pointer px-3 py-1 text-sm font-medium rounded-full transition-colors ${
-                  language === "jp"
-                    ? "bg-purple-500 text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                jp
-              </button>
-            </div>
 
             <ThemeToggle />
 
@@ -437,32 +413,6 @@ export function Navbar() {
                     {item.name}
                   </Link>
                 ))}
-              </div>
-            </div>
-            {/* Mobile Language Toggle */}
-            <div className="py-4 px-4 border-t border-border/50 mt-4">
-              <p className="text-sm text-muted-foreground mb-2">Language</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setLanguage("en")}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    language === "en"
-                      ? "bg-purple-500 text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  onClick={() => setLanguage("jp")}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    language === "jp"
-                      ? "bg-purple-500 text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  Japanese
-                </button>
               </div>
             </div>
           </div>

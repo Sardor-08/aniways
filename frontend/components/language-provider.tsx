@@ -8,7 +8,7 @@ import {
   useCallback,
 } from "react";
 
-type Language = "en" | "jp";
+type Language = "uz";
 
 interface LanguageContextType {
   language: Language;
@@ -33,15 +33,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>("uz");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem("language") as Language;
-    if (stored === "en" || stored === "jp") {
-      setLanguage(stored);
-    }
+    localStorage.removeItem("language");
+    setLanguage("uz");
   }, []);
 
   const handleSetLanguage = (lang: Language) => {
@@ -55,13 +53,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       title_english?: string;
       title_japanese?: string;
     }) => {
-      if (language === "en") {
-        // Prefer English, fallback to Romaji (title)
-        return anime.title_english || anime.title || "Unknown";
-      } else {
-        // Use Romaji for Japanese preference
-        return anime.title || anime.title_english || "Unknown";
-      }
+      return anime.title_english || anime.title || "Nomaʼlum";
     },
     [language],
   );
@@ -75,13 +67,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       },
       epNum: number,
     ) => {
-      if (language === "en") {
-        // English: prefer English title, fallback to Romanji
-        return episode.title || episode.title_romanji || `Episode ${epNum}`;
-      } else {
-        // Japanese: prefer Romanji, fallback to English
-        return episode.title_romanji || episode.title || `Episode ${epNum}`;
-      }
+      return episode.title || episode.title_romanji || `Qism ${epNum}`;
     },
     [language],
   );
