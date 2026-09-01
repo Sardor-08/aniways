@@ -4,8 +4,11 @@ const COOKIE = "anilo_admin_session";
 const SESSION_VALUE = "authenticated";
 
 function validCredentials(username: string, password: string) {
-  const allowedUsernames = [process.env.ADMIN_USERNAME, process.env.ADMIN_EMAIL].filter(Boolean);
-  return allowedUsernames.includes(username) && password === process.env.ADMIN_PASSWORD;
+  const normalized = username.trim().toLowerCase();
+  const allowedUsernames = [process.env.ADMIN_USERNAME, process.env.ADMIN_EMAIL]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.trim().toLowerCase());
+  return allowedUsernames.includes(normalized) && password === process.env.ADMIN_PASSWORD;
 }
 
 export async function POST(request: Request) {

@@ -27,7 +27,7 @@ export const authApi = {
     const res = await fetch(`${AUTH_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: username, password }),
+      body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -50,7 +50,7 @@ export const authApi = {
   },
 
   getMe: async (): Promise<User> => {
-    const res = await fetch(`${AUTH_URL}/api/auth/me`, {
+    const res = await fetch(`${AUTH_URL}/api/auth/login`, {
       headers: getAuthHeader(),
     });
     if (!res.ok) throw new Error("Not authenticated");
