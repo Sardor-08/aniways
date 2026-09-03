@@ -1,8 +1,10 @@
-"use client";
+import { AdminCRM } from "@/components/admin/admin-crm";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { BarChart3, BookOpen, Film, LayoutDashboard, LogOut, Settings, ShieldCheck, Users } from "lucide-react";
+export default function AdminPage() {
+  return <AdminCRM />;
+}
+
+/*
 
 const sections = [
   { label: "Umumiy ko‘rinish", icon: LayoutDashboard },
@@ -54,3 +56,4 @@ export default function AdminPage() {
 
 function Metric({ label, value, change }: { label: string; value: string; change: string }) { return <div className="rounded-2xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">{label}</p><div className="mt-4 flex items-end justify-between gap-2"><p className="text-2xl font-bold">{value}</p><span className="text-xs font-medium text-primary">{change}</span></div></div>; }
 function Status({ name, value }: { name: string; value: string }) { return <div className="flex items-center justify-between border-b border-background/15 pb-4 text-sm"><span className="opacity-75">{name}</span><span className="font-medium">{value}</span></div>; }
+*/
