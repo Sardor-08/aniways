@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { query } from "@/lib/db"
 
-function authorized(request: Request) {
-  const token = request.headers.get("x-admin-token")
-  return Boolean(token && token === process.env.ADMIN_PASSWORD)
+async function authorized() {
+  const cookieStore = await cookies()
+  return cookieStore.get("anilo_admin_session")?.value === "authenticated"
 }
 
-export async function GET(request: Request) {
-  if (!authorized(request)) return NextResponse.json({ error: "Ruxsat berilmadi" }, { status: 401 })
+export async function GET() {
+  if (!(await authorized())) return NextResponse.json({ error: "Ruxsat berilmadi" }, { status: 401 })
 
   try {
     const result = await query(
