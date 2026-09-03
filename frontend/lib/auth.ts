@@ -11,7 +11,8 @@ import type {
 export type { User, UserProfile, AuthResponse, ListStatus, AnimeListItem, AnimeListResponse };
 export { statusLabels, statusColors, statusOptions } from "@/types/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4444";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const AUTH_URL = "";
 
 // Helper to get auth header
 function getAuthHeader(): Record<string, string> {
@@ -23,10 +24,10 @@ function getAuthHeader(): Record<string, string> {
 // Auth API
 export const authApi = {
   signup: async (username: string, password: string): Promise<AuthResponse> => {
-    const res = await fetch(`${API_URL}/api/auth/signup`, {
+    const res = await fetch(`${AUTH_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: username, password }),
+      body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -36,7 +37,7 @@ export const authApi = {
   },
 
   login: async (username: string, password: string): Promise<AuthResponse> => {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
+    const res = await fetch(`${AUTH_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: username, password }),
@@ -49,7 +50,7 @@ export const authApi = {
   },
 
   getMe: async (): Promise<User> => {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
+    const res = await fetch(`${AUTH_URL}/api/auth/login`, {
       headers: getAuthHeader(),
     });
     if (!res.ok) throw new Error("Not authenticated");
@@ -57,7 +58,7 @@ export const authApi = {
   },
 
   getProfile: async (): Promise<UserProfile> => {
-    const res = await fetch(`${API_URL}/api/auth/profile`, {
+    const res = await fetch(`${AUTH_URL}/api/auth/profile`, {
       headers: getAuthHeader(),
     });
     if (!res.ok) throw new Error("Failed to get profile");
